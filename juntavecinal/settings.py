@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'juntavecinal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dbjunta',        # El nombre de tu base de datos PostgreSQL
+        'NAME': 'dbjunta1',        # El nombre de tu base de datos PostgreSQL
         'USER': 'postgres',               # El usuario de la base de datos
         'PASSWORD': 'postgres',           # La contraseña de tu usuario
         'HOST': 'localhost',              # En caso de estar en el servidor local
@@ -120,6 +120,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+AUTH_USER_MODEL = 'usuarios.User' 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/

@@ -3,7 +3,7 @@ from usuarios.models import User
 
 class Housing(models.Model):
     address = models.CharField(max_length=255)
-    housing_type = models.CharField(max_length=50, choices=[('Casa', 'Casa'), ('Departamento', 'Departamento')])
+    housing_type = models.CharField(max_length=50, choices=[('Casa', 'Casa'), ('Departamento', 'Departamento')], null=True, blank=True)
 
     def __str__(self):
         return self.address

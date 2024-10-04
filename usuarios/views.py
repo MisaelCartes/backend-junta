@@ -1,3 +1,55 @@
 from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import User
+from .serializers import UserSerializer
+from viviendas.models import Housing
 
 # Create your views here.
+@api_view(['POST'])
+def register_user(request):
+    if request.method == 'POST':
+        data = request.data
+        print("Data request", data)
+
+        # Crear un full_name concatenando los nombres
+        full_name = f"{data.get('firstName', '')} {data.get('lastName', '')} {data.get('motherLastName', '')}"
+        address = data.get('address')
+        rut = data.get('rut')
+        
+        # Limpiar el RUT eliminando puntos y comas y convertir a int
+        rut = int(rut.replace('.', '').replace('-', ''))
+        print("RUTTTTT", rut)
+
+        # Inicializar role
+        role = None
+        if data.get('role') == "MEMBER":
+            role = 2
+
+        adjusted_data = {
+            'rut': rut,
+            'password': data.get('password'),
+            'email': data.get('email'),
+            'full_name': full_name,
+            'phone_number': data.get('phoneNumber'),
+            'address': address,
+            'role': role,
+            'photo': data.get('photo')
+        }
+
+        serializer = UserSerializer(data=adjusted_data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            # Se obtiene vivienda
+            house = Housing.objects.filter(address=address).last()
+            # Si no existe en el sistema se crea
+            if not house:
+                house = Housing(address=address)
+                house.save()
+
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
