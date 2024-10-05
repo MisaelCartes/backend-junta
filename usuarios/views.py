@@ -1,5 +1,8 @@
 from django.shortcuts import render
 
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -9,6 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializers import UserSerializer
 from viviendas.models import Housing
+
 
 # Create your views here.
 @api_view(['POST'])
@@ -52,7 +56,11 @@ def register_user(request):
             house = Housing.objects.filter(address=address).last()
             # Si no existe en el sistema se crea
             if not house:
-                house = Housing(address=address,housing_type=housing_type)
+                latitud, longitud = obtener_latitud_longitud(address)
+                if latitud and longitud:
+                    print("latitud",latitud)
+                    print("longitud",longitud)
+                house = Housing(address=address,housing_type=housing_type,latitude=latitud,longitude=longitud)
                 house.save()
 
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
@@ -68,15 +76,31 @@ def login_user(request):
     # Autentica al usuario
     user = authenticate(rut=rut, password=password)
     if user is not None:
+
         # Si la autenticación es exitosa, genera el token
         usuario = User.objects.filter(rut=rut).last()
         refresh = RefreshToken.for_user(user)
+        # Agrega los datos adicionales al access token
+        refresh.access_token['rol'] = str(usuario.role)
+        refresh.access_token['rut'] = str(usuario.rut)
+        refresh.access_token['email'] = str(usuario.email)
+
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
-            'rol':str(usuario.role),
-            'rut':str(usuario.rut),
-            'email':str(usuario.email),
         }, status=status.HTTP_200_OK)
     
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+def obtener_latitud_longitud(direccion):
+    geolocator = Nominatim(user_agent="mi_aplicacion")
+    try:
+        ubicacion = geolocator.geocode(direccion)
+        if ubicacion:
+            latitud = ubicacion.latitude
+            longitud = ubicacion.longitude
+            return latitud, longitud
+        else:
+            return None, None
+    except GeocoderTimedOut:
+        return obtener_latitud_longitud(direccion)

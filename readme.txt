@@ -12,4 +12,5 @@ pip install django
 pip install psycopg2
 pip install djangorestframework
 pip install djangorestframework-simplejwt
+pip install geopy # libreria captura latitud longitud
 
