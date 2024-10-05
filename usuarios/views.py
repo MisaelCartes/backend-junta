@@ -20,6 +20,7 @@ def register_user(request):
         # Crear un full_name concatenando los nombres
         full_name = f"{data.get('firstName', '')} {data.get('lastName', '')} {data.get('motherLastName', '')}"
         address = data.get('address')
+        housing_type =data.get('housingType')
         rut = data.get('rut')
         
         # Limpiar el RUT eliminando puntos y comas y convertir a int
@@ -51,7 +52,7 @@ def register_user(request):
             house = Housing.objects.filter(address=address).last()
             # Si no existe en el sistema se crea
             if not house:
-                house = Housing(address=address)
+                house = Housing(address=address,housing_type=housing_type)
                 house.save()
 
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
