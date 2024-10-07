@@ -83,8 +83,8 @@ DATABASES = {
         'NAME': 'dbjunta1',        # El nombre de tu base de datos PostgreSQL
         'USER': 'postgres',               # El usuario de la base de datos
         'PASSWORD': 'postgres',           # La contraseña de tu usuario
-        'HOST': 'localhost',              # En caso de estar en el servidor local
-        'PORT': '5432',                   # El puerto de PostgreSQL (por defecto es 5432)
+        'HOST': '127.0.0.1',              # En caso de estar en el servidor local
+        'PORT': '5434',                   # El puerto de PostgreSQL (por defecto es 5432)
     }
 }
 
