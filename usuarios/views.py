@@ -79,15 +79,14 @@ def login_user(request):
 
         # Si la autenticación es exitosa, genera el token
         usuario = User.objects.filter(rut=rut).last()
-        refresh = RefreshToken.for_user(user)
+        token = RefreshToken.for_user(user)
         # Agrega los datos adicionales al access token
-        refresh.access_token['rol'] = str(usuario.role)
-        refresh.access_token['rut'] = str(usuario.rut)
-        refresh.access_token['email'] = str(usuario.email)
-
+        token["rol"] = str(usuario.role)
+        token["rut"] = str(usuario.rut)
+        token["email"] = str(usuario.email)
+        print(token)
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            'token': str(token),
         }, status=status.HTTP_200_OK)
     
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
