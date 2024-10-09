@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import datetime
 
 from .models import User
 from .serializers import UserSerializer
@@ -79,6 +80,11 @@ def login_user(request):
 
         # Si la autenticación es exitosa, genera el token
         usuario = User.objects.filter(rut=rut).last()
+        
+        # Actualiza el campo last_login del usuario con datetime
+        usuario.last_login = datetime.now()
+        usuario.save()
+        print(usuario.last_login)
         token = RefreshToken.for_user(user)
         # Agrega los datos adicionales al access token
         token["rol"] = str(usuario.role)
