@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(null=True, blank=True)  # Permitir nulos
-    rut = models.IntegerField(unique=True)  # RUT único
+    rut = models.CharField(unique=True)  # RUT único
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)
     address = models.CharField(max_length=255)
@@ -41,7 +41,27 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.full_name
+
+    def full_name_conv(self):
+        full_name = self.full_name.strip()
+        name_parts = full_name.split()
         
+        if len(name_parts) >= 3:
+            nombre = name_parts[0]
+            apellido = name_parts[1]
+            segundo_apellido = " ".join(name_parts[2:])  # Si hay más de 2 apellidos, los unimos
+        elif len(name_parts) == 2:
+            nombre = name_parts[0]
+            apellido = name_parts[1]
+            segundo_apellido = ''
+        else:
+            nombre = name_parts[0]
+            apellido = ''
+            segundo_apellido = ''
+        # Retornamos siempre 3 valores
+
+        return nombre, apellido, segundo_apellido
+
 class Membership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     association = models.ForeignKey('juntas.NeighborAssociation', on_delete=models.CASCADE)
