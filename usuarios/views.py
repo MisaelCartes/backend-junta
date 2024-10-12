@@ -136,7 +136,7 @@ def users_datatable(request):
         print("FAMILIAA:",family_name)
 
         house = Housing.objects.filter(address=user.address).last()
-        family = Family.objects.filter(housing=house).last()
+        family = Family.objects.filter(housing=house,user=user).last()
         if not house:
             latitud, longitud = obtener_latitud_longitud(user.address)
             if latitud and longitud:
