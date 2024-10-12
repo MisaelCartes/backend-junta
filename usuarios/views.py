@@ -125,6 +125,7 @@ def users_datatable(request):
 @api_view(['POST'])
 def user_delete(request):
     rut = request.data.get('rut')
+    rut = int(rut.replace('.', '').replace('-', ''))
     user = User.objects.filter(rut=rut).last()
     if user:
         user.delete()
@@ -135,6 +136,7 @@ def user_delete(request):
 @api_view(['POST'])
 def user_edit_modal(request):
     rut = request.data.get('rut')
+    rut = int(rut.replace('.', '').replace('-', ''))
     user = User.objects.filter(rut=rut).last()
     if user:
         #NOMBRE Y APELLIDOS
@@ -161,6 +163,7 @@ def user_edit_modal(request):
 @api_view(['POST'])
 def user_edit(request):
     rut = request.data.get('rut')
+    rut = int(rut.replace('.', '').replace('-', ''))
     data = request.data
     user = User.objects.filter(rut=rut).last()
     if user:
