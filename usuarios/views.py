@@ -5,6 +5,7 @@ from geopy.exc import GeocoderTimedOut
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.http import JsonResponse
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -109,3 +110,75 @@ def obtener_latitud_longitud(direccion):
             return None, None
     except GeocoderTimedOut:
         return obtener_latitud_longitud(direccion)
+
+
+@api_view(['POST'])
+def users_datatable(request):
+    usuarios = User.objects.all().values('full_name', 'rut', 'email', 'phone_number', 'address', 'role')
+    
+    if not usuarios.exists():
+        return JsonResponse({'message': 'No users found'}, status=status.HTTP_404_NOT_FOUND)  # Puedes usar otro código de estado si lo prefieres
+    
+    return JsonResponse(list(usuarios), safe=False)
+
+
+@api_view(['POST'])
+def user_delete(request):
+    rut = request.data.get('rut')
+    user = User.objects.filter(rut=rut).last()
+    if user:
+        user.delete()
+        return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def user_edit_modal(request):
+    rut = request.data.get('rut')
+    user = User.objects.filter(rut=rut).last()
+    if user:
+        #NOMBRE Y APELLIDOS
+        # Asumimos que tienes un campo `full_name` en el modelo que contiene el nombre completo.
+        nombre, apellido, segundo_apellido = user.full_name_conv()
+
+        #CORREO
+        email = user.email if user.email else ''
+
+        #NUMERO TELEFONICO
+        phone_number = user.phone_number if user.phone_number else ''
+        
+        return JsonResponse({
+            'firstName': nombre,
+            'lastName': apellido,
+            'motherLastName': segundo_apellido,
+            'email':email,
+            'phoneNumber':phone_number
+        })
+    else:
+        return JsonResponse({'message': 'No user found'}, status=status.HTTP_404_NOT_FOUND)  # Puedes usar otro código de estado si lo prefieres
+    
+
+@api_view(['POST'])
+def user_edit(request):
+    rut = request.data.get('rut')
+    data = request.data
+    user = User.objects.filter(rut=rut).last()
+    if user:
+        #se obtienen datos actuales en caso de que los datos de entrada vengan vacios 
+        actual_name, actual_lastname, actual_mlastname = user.full_name_conv()
+
+        name = data.get('firstName') if data.get('firstName') else actual_name
+        lastname = data.get('lastName') if data.get('lastName') else actual_lastname
+        mlastname = data.get('motherLastName') if data.get('motherLastName') else actual_mlastname
+        full_name = f"{name} {lastname} {mlastname}"
+        email = data.get('email') if data.get('email') else user.email
+        phone_number = data.get('phoneNumber') if data.get('phoneNumber') else user.phone_number
+
+        user.email = email
+        user.full_name =full_name
+        user.phone_number = phone_number
+        user.save()
+
+        return Response({'message': 'User edited successfully'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
