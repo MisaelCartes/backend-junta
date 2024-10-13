@@ -31,7 +31,7 @@ def register_user(request):
         
         # Limpiar el RUT eliminando puntos y comas y convertir a int
         rut = int(rut.replace('.', '').replace('-', ''))
-        print("RUTTTTT", rut)
+        print("Rut: ", rut)
 
         # Inicializar role
         role = None
@@ -124,7 +124,7 @@ def obtener_latitud_longitud(direccion):
         return obtener_latitud_longitud(direccion)
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 def users_datatable(request):
     users_for =User.objects.all()
     usuarios = users_for.values('full_name', 'rut', 'email', 'phone_number', 'address', 'role')
@@ -154,7 +154,7 @@ def users_datatable(request):
     return JsonResponse(list(usuarios), safe=False)
 
 
-@api_view(['POST'])
+@api_view(['DELETE'])
 def user_delete(request):
     rut = request.data.get('rut')
     rut = int(rut.replace('.', '').replace('-', ''))
@@ -165,7 +165,7 @@ def user_delete(request):
     else:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['POST'])
+@api_view(['PUT'])
 def user_edit_modal(request):
     rut = request.data.get('rut')
     rut = int(rut.replace('.', '').replace('-', ''))
@@ -192,7 +192,7 @@ def user_edit_modal(request):
         return JsonResponse({'message': 'No user found'}, status=status.HTTP_404_NOT_FOUND)  # Puedes usar otro código de estado si lo prefieres
     
 
-@api_view(['POST'])
+@api_view(['PUT'])
 def user_edit(request):
     rut = request.data.get('rut')
     rut = int(rut.replace('.', '').replace('-', ''))
