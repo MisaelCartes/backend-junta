@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import register_user, login_user, users_datatable,user_delete,user_edit,user_edit_modal,family_member_register
+from .views import register_user, login_user, users_datatable,user_delete,user_edit,user_edit_modal,family_member_register, get_user_by_rut
 
 urlpatterns = [
     path('register/', register_user, name='register_user'),
@@ -9,5 +9,5 @@ urlpatterns = [
     path('user/edit/modal', user_edit_modal, name='user_edit_modal'),
     path('user/delete/', user_delete, name='user_delete'),
     path('register/family/member/', family_member_register, name='family_member_register'),
-
+    path('user/list/one/', get_user_by_rut, name='get_user_by_rut'),
 ]
