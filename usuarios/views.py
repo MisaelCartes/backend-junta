@@ -13,7 +13,7 @@ from datetime import datetime
 
 from .models import User
 from .serializers import UserSerializer
-from viviendas.models import Housing
+from viviendas.models import Housing,Family,FamilyMember
 
 
 # Create your views here.
@@ -53,9 +53,11 @@ def register_user(request):
 
         if serializer.is_valid():
             serializer.save()
+            user = User.objects.filter(rut=rut).last()
 
             # Se obtiene vivienda
             house = Housing.objects.filter(address=address).last()
+
             # Si no existe en el sistema se crea
             if not house:
                 latitud, longitud = obtener_latitud_longitud(address)
@@ -65,6 +67,16 @@ def register_user(request):
                 house = Housing(address=address,housing_type=housing_type,latitude=latitud,longitude=longitud)
                 house.save()
 
+            family = Family.objects.filter(housing=house,user=user).last()
+
+            nombre, apellido, segundo_apellido = user.full_name_conv()
+            print("user",user.full_name)
+            family_name = f"{apellido} {segundo_apellido}"
+            print("FAMILIAA:",family_name)
+
+            if not family:
+                family = Family(housing=house,user=user,family_name=family_name)
+                family.save()
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -114,8 +126,28 @@ def obtener_latitud_longitud(direccion):
 
 @api_view(['POST'])
 def users_datatable(request):
-    usuarios = User.objects.all().values('full_name', 'rut', 'email', 'phone_number', 'address', 'role')
-    
+    users_for =User.objects.all()
+    usuarios = users_for.values('full_name', 'rut', 'email', 'phone_number', 'address', 'role')
+    for user in users_for:
+
+        nombre, apellido, segundo_apellido = user.full_name_conv()
+        print("user",user.full_name)
+        family_name = f"{apellido} {segundo_apellido}"
+        print("FAMILIAA:",family_name)
+
+        house = Housing.objects.filter(address=user.address).last()
+        family = Family.objects.filter(housing=house,user=user).last()
+        if not house:
+            latitud, longitud = obtener_latitud_longitud(user.address)
+            if latitud and longitud:
+                print("latitud",latitud)
+                print("longitud",longitud)
+            housing_type = "Casa"
+            house = Housing(address=user.address,housing_type=housing_type,latitude=latitud,longitude=longitud)
+            house.save()
+        if not family:
+           family = Family(housing=house,user=user,family_name=family_name)
+           family.save()
     if not usuarios.exists():
         return JsonResponse({'message': 'No users found'}, status=status.HTTP_404_NOT_FOUND)  # Puedes usar otro código de estado si lo prefieres
     
@@ -183,5 +215,43 @@ def user_edit(request):
         user.save()
 
         return Response({'message': 'User edited successfully'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def family_member_register(request):
+    data = request.data
+    rut = data.get('rut')
+    rut_member = data.get('rutMember')
+    rut = int(rut.replace('.', '').replace('-', ''))
+    rut_member = int(rut_member.replace('.', '').replace('-', ''))
+    user = User.objects.filter(rut=rut).last()
+    if user:
+        family = Family.objects.filter(user=user).last()
+        if family:
+            # Crear un nuevo miembro de familia con los datos recibidos
+            family_member = FamilyMember.objects.filter(rut=rut_member).last()
+            if not family_member:
+                date_of_birth_str = data.get('date_of_birth')
+                date_of_birth = datetime.strptime(date_of_birth_str, '%Y-%m-%d').date()
+                family_member = FamilyMember(
+                    family=family,
+                    first_name=data.get('firstName'),
+                    last_name=data.get('lastName'),
+                    rut=rut_member,
+                    relationship=data.get('relationship'),
+                    date_of_birth=date_of_birth,
+                    email=data.get('email', None),
+                    phone_number=data.get('phoneNumber', None)
+                )
+                family_member.save()
+                print(family_member)
+                print(family_member.get_age())
+
+                return Response({'message': 'Family member registered successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Family member already registered'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'error': 'Family not found'}, status=status.HTTP_404_NOT_FOUND)
     else:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
