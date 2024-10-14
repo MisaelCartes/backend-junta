@@ -201,7 +201,6 @@ def user_edit(request):
         name = data.get('firstName') or actual_name
         lastname = data.get('lastName') or actual_lastname
         mlastname = data.get('motherLastName') or actual_mlastname
-        full_name = f"{name} {lastname} {mlastname}"
         email = data.get('email') or user.email
         phone_number = data.get('phoneNumber') or user.phone_number
 
