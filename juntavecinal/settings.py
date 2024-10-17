@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,6 +28,9 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Application definition
 
 INSTALLED_APPS = [
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
     'usuarios',
     'juntas',
     'viviendas',
+    'noticias',
     'rest_framework',
 ]
 
@@ -82,11 +86,11 @@ WSGI_APPLICATION = 'juntavecinal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dbjunta1',        # El nombre de tu base de datos PostgreSQL
+        'NAME': 'dbjunta2',        # El nombre de tu base de datos PostgreSQL
         'USER': 'postgres',               # El usuario de la base de datos
         'PASSWORD': 'postgres',           # La contraseña de tu usuario
-        'HOST': '127.0.0.1',              # En caso de estar en el servidor local
-        'PORT': '5434',                   # El puerto de PostgreSQL (por defecto es 5432)
+        'HOST': 'localhost',              # En caso de estar en el servidor local
+        'PORT': '5432',                   # El puerto de PostgreSQL (por defecto es 5432)
     }
 }
 

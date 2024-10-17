@@ -10,9 +10,11 @@ EJECUTAR
 
 pip install django
 pip install psycopg2
+pip install Pillow
 pip install djangorestframework
 pip install djangorestframework-simplejwt
 pip install geopy # libreria captura latitud longitud
+
 
 #CORS FIX
 pip install django-cors-headers
