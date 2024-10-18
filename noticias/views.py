@@ -10,16 +10,19 @@ from .serializers import NoticiaSerializer
 
 @api_view(['POST'])
 def create_noticia(request):
-    # Validar que se envió el campo 'tittle'
-    tittle = request.data.get('tittle')
-    content = request.data.get('content')
-    image = request.FILES.get('image')
-    date_vigencia = request.data.get('date_vigencia')
+    # Obtener los datos del request
+    tittle = request.data.get('title')
+    content = request.data.get('description')
+    image = request.FILES.get('urlToImage')
+    date_upload = request.data.get('publishedAt')
+    date_vigencia = request.data.get('dateVigencia')
+    source = request.data.get('source')
+    category = request.data.get('category')
+    author = request.data.get('author')
 
     # Validación del título
     if not tittle:
         return Response({'error': 'El campo "tittle" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
-
     if len(tittle) > 200:
         return Response({'error': 'El campo "tittle" no puede tener más de 200 caracteres.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -35,25 +38,56 @@ def create_noticia(request):
     # Validación de la fecha de vigencia
     if date_vigencia:
         try:
-            # Intenta convertir la fecha de vigencia al formato deseado
+            # Convertir la fecha de vigencia al formato deseado
             date_vigencia_formatted = datetime.strptime(date_vigencia, '%Y-%m-%d %H:%M')
-            
-            # Asegúrate de que la fecha de vigencia sea una fecha futura
             if date_vigencia_formatted < datetime.now():
                 return Response({"error": "La fecha de vigencia debe ser una fecha futura."}, status=status.HTTP_400_BAD_REQUEST)
         except ValueError:
             return Response({"error": "Formato de fecha de vigencia no válido. Usa 'AAAA-MM-DD HH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Si las validaciones son correctas, utilizar el serializador
-    serializer = NoticiaSerializer(data=request.data)
-    if serializer.is_valid():
-        # Guardar la fecha de vigencia en el serializador (asegúrate de que el modelo tenga este campo)
-        serializer.validated_data['date_vigencia'] = date_vigencia_formatted
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    # Validación del source
+    if not source:
+        return Response({'error': 'El campo "source" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(source) > 100:
+        return Response({'error': 'El campo "source" no puede tener más de 100 caracteres.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Si el serializador encuentra errores
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Validación de la fecha de publicación (date_upload)
+    if date_upload:
+        try:
+            # Convertir la fecha de subida al formato deseado
+            date_upload_formatted = datetime.strptime(date_upload, '%Y-%m-%d %H:%M')
+        except ValueError:
+            return Response({"error": "Formato de fecha de subida no válido. Usa 'AAAA-MM-DD HH:MM'."}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        date_upload_formatted = datetime.now()  # Si no se proporciona, usar la fecha y hora actual
+
+    # Validación de la categoría
+    if not category:
+        return Response({'error': 'El campo "category" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(category) > 50:
+        return Response({'error': 'El campo "category" no puede tener más de 50 caracteres.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validación del autor
+    if not author:
+        return Response({'error': 'El campo "author" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(author) > 100:
+        return Response({'error': 'El campo "author" no puede tener más de 100 caracteres.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Crear la noticia directamente en el modelo
+    try:
+        noticia = Noticia.objects.create(
+            tittle=tittle,
+            content=content,
+            image=image,
+            date_vigencia=date_vigencia_formatted,
+            source=source,
+            date_upload=date_upload_formatted,
+            category=category,
+            author=author
+        )
+        return Response({"success": "Noticia creada exitosamente", "noticia_id": noticia.id}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def get_all_noticias(request):
