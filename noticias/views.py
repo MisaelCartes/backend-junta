@@ -97,3 +97,116 @@ def get_all_noticias(request):
     serializer = NoticiaSerializer(noticias_vigentes, many=True)  # Serializar el queryset
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['PUT'])
+def edit_noticia(request):
+    # Obtener el ID de la noticia desde el cuerpo de la solicitud
+    noticia_id = request.data.get('id')
+    
+    if not noticia_id:
+        return Response({'error': 'El campo "id" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Buscar la noticia por su ID
+        noticia = Noticia.objects.get(id=noticia_id)
+    except Noticia.DoesNotExist:
+        return Response({'error': 'Noticia no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Obtener los datos del request
+    tittle = request.data.get('title')
+    content = request.data.get('description')
+    image = request.FILES.get('urlToImage')
+    date_upload = request.data.get('publishedAt')
+    date_vigencia = request.data.get('dateVigencia')
+    source = request.data.get('source')
+    category = request.data.get('category')
+    author = request.data.get('author')
+
+    # Validación del título
+    if not tittle:
+        return Response({'error': 'El campo "title" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(tittle) > 200:
+        return Response({'error': 'El campo "title" no puede tener más de 200 caracteres.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validación del contenido
+    if not content:
+        return Response({'error': 'El campo "description" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validación de la imagen (opcional)
+    if image:
+        if not image.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+            return Response({'error': 'Solo se permiten imágenes en formato .jpg, .jpeg o .png.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validación de la fecha de publicación (opcional)
+    if date_upload:
+        try:
+            # Validar y convertir la fecha de publicación al formato correcto
+            date_upload = datetime.strptime(date_upload, '%Y-%m-%dT%H:%M:%S')
+        except ValueError:
+            return Response({'error': 'El campo "publishedAt" tiene un formato incorrecto. Usa "AAAA-MM-DDTHH:MM:SS".'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validación de la fecha de vigencia
+    if date_vigencia:
+        try:
+            # Validar y convertir la fecha de vigencia al formato correcto
+            date_vigencia = datetime.strptime(date_vigencia, '%Y-%m-%dT%H:%M:%S')
+            # Validar que la fecha de vigencia sea futura
+            if date_vigencia < datetime.now():
+                return Response({"error": "La fecha de vigencia debe ser una fecha futura."}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError:
+            return Response({'error': 'El campo "dateVigencia" tiene un formato incorrecto. Usa "AAAA-MM-DDTHH:MM:SS".'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validar el campo fuente
+    if not source:
+        return Response({'error': 'El campo "source" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validar la categoría
+    if not category:
+        return Response({'error': 'El campo "category" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validar el autor
+    if not author:
+        return Response({'error': 'El campo "author" es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Actualizar los campos de la noticia
+    noticia.tittle = tittle
+    noticia.content = content
+    if image:  # Si se ha subido una nueva imagen
+        noticia.image = image
+    if date_upload:  # Actualizar la fecha de publicación si se proporciona
+        noticia.date_upload = date_upload
+    noticia.date_vigencia = date_vigencia
+    noticia.source = source
+    noticia.category = category
+    noticia.author = author
+
+    # Guardar la noticia actualizada
+    noticia.save()
+
+    return Response({'message': 'Noticia actualizada correctamente.'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_noticia_by_id(request):
+
+    noticia_id = request.data.get('id')
+    # Buscar la noticia por ID
+    noticia = Noticia.objects.filter(id=noticia_id).last()
+    if noticia:
+        # Serializar la noticia
+        serializer = NoticiaSerializer(noticia)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'Noticia no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+def delete_noticia(request):
+
+    noticia_id = request.data.get('id')
+    # Buscar la noticia por ID
+    noticia = Noticia.objects.filter(id=noticia_id).last()
+
+    if noticia:
+        noticia.delete()
+        return Response({'message': 'Noticia eliminada correctamente.'}, status=status.HTTP_200_OK)
+    return Response({'error': 'Noticia not found'}, status=status.HTTP_404_NOT_FOUND)
+ 

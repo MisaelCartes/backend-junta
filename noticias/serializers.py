@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import Noticia
 
 class NoticiaSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()  # Agregar el campo id
     title = serializers.CharField(source='tittle')
     description = serializers.CharField(source='content')
     urlToImage = serializers.ImageField(source='image')
@@ -14,4 +15,4 @@ class NoticiaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Noticia
-        fields = ['title', 'description', 'urlToImage', 'publishedAt', 'dateVigencia', 'source', 'category', 'author']
+        fields = ['id','title', 'description', 'urlToImage', 'publishedAt', 'dateVigencia', 'source', 'category', 'author']
