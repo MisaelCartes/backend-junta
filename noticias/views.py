@@ -187,7 +187,7 @@ def edit_noticia(request):
 @api_view(['GET'])
 def get_noticia_by_id(request):
 
-    noticia_id = request.data.get('id')
+    noticia_id = request.query_params.get('id')
     # Buscar la noticia por ID
     noticia = Noticia.objects.filter(id=noticia_id).last()
     if noticia:
