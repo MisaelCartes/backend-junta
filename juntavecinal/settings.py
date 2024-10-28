@@ -86,11 +86,11 @@ WSGI_APPLICATION = 'juntavecinal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dbjunta2',        # El nombre de tu base de datos PostgreSQL
+        'NAME': 'dbjunta1',        # El nombre de tu base de datos PostgreSQL
         'USER': 'postgres',               # El usuario de la base de datos
         'PASSWORD': 'postgres',           # La contraseña de tu usuario
         'HOST': 'localhost',              # En caso de estar en el servidor local
-        'PORT': '5432',                   # El puerto de PostgreSQL (por defecto es 5432)
+        'PORT': '5434',                   # El puerto de PostgreSQL (por defecto es 5432)
     }
 }
 
