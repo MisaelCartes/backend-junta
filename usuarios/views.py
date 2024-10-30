@@ -7,13 +7,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import datetime
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
-
+from django.contrib.auth.decorators import login_required
 from .models import User
 from .serializers import UserSerializer
 from viviendas.models import Housing, Family, FamilyMember
 
 # Create your views here.
-
 @api_view(['POST'])
 def register_user(request):
     if request.method == 'POST':
@@ -75,7 +74,6 @@ def register_user(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['POST'])
 def login_user(request):
     rut = request.data.get('rut')
@@ -108,7 +106,7 @@ def obtener_latitud_longitud(direccion):
     except GeocoderTimedOut:
         return obtener_latitud_longitud(direccion)
 
-
+@login_required
 @api_view(['GET'])
 def users_datatable(request):
     users = User.objects.all()
@@ -153,7 +151,7 @@ def users_datatable(request):
     return JsonResponse(usuarios_data, safe=False)
 
 
-
+@login_required
 @api_view(['DELETE'])
 def user_delete(request):
     rut = request.data.get('rut')
@@ -166,7 +164,7 @@ def user_delete(request):
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@login_required
 @api_view(['PUT'])
 def user_edit_modal(request):
     rut = request.data.get('rut')
@@ -188,7 +186,7 @@ def user_edit_modal(request):
 
     return JsonResponse({'message': 'No user found'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@login_required
 @api_view(['PUT'])
 def user_edit(request):
     rut = request.data.get('rut')
@@ -215,7 +213,7 @@ def user_edit(request):
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@login_required
 @api_view(['POST'])
 def family_member_register(request):
     data = request.data
@@ -255,7 +253,7 @@ def family_member_register(request):
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-
+@login_required
 @api_view(['GET'])
 def get_user_by_rut(request):
     rut = request.query_params.get('rut')
