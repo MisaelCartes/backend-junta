@@ -89,7 +89,7 @@ def create_noticia(request):
         return Response({"success": "Noticia creada exitosamente", "noticia_id": noticia.id}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-@login_required
+
 @api_view(['GET'])
 def get_all_noticias(request):
     # Obtener solo las noticias que están vigentes
