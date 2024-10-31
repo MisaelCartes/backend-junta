@@ -1,15 +1,16 @@
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.contrib.auth.decorators import login_required
+# from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from rest_framework import status
 from .models import Noticia
 from .serializers import NoticiaSerializer
 # Create your views here.
 
-@login_required
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_noticia(request):
     # Obtener los datos del request
     tittle = request.data.get('title')
@@ -97,8 +98,9 @@ def get_all_noticias(request):
     noticias_vigentes = Noticia.objects.filter(date_vigencia__gte=now)  # Filtrar por fecha de vigencia
     serializer = NoticiaSerializer(noticias_vigentes, many=True)  # Serializar el queryset
     return Response(serializer.data, status=status.HTTP_200_OK)
-@login_required
+
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def edit_noticia(request):
     # Obtener el ID de la noticia desde el cuerpo de la solicitud
     noticia_id = request.data.get('id')
@@ -184,8 +186,9 @@ def edit_noticia(request):
     noticia.save()
 
     return Response({'message': 'Noticia actualizada correctamente.'}, status=status.HTTP_200_OK)
-@login_required
+
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_noticia_by_id(request):
 
     noticia_id = request.query_params.get('id')
@@ -198,8 +201,9 @@ def get_noticia_by_id(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Noticia no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
-@login_required
+
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_noticia(request):
 
     noticia_id = request.data.get('id')

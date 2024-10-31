@@ -1,5 +1,6 @@
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
@@ -75,6 +76,7 @@ def register_user(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([AllowAny]) 
 def login_user(request):
     rut = request.data.get('rut')
     password = request.data.get('password')
@@ -85,15 +87,19 @@ def login_user(request):
         usuario.last_login = datetime.now()
         usuario.save()
 
-        token = RefreshToken.for_user(user)
-        token["rol"] = str(usuario.role)
-        token["rut"] = str(usuario.rut)
-        token["email"] = str(usuario.email)
-        
-        return Response({'token': str(token)}, status=status.HTTP_200_OK)
+        # Generar el RefreshToken y AccessToken
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)  # Obtenemos el AccessToken
+
+        # Almacenar información en el RefreshToken (opcional)
+        refresh["rol"] = str(usuario.role)
+        refresh["rut"] = str(usuario.rut)
+        refresh["email"] = str(usuario.email)
+
+        # Devolver solo el AccessToken en un campo llamado 'token'
+        return Response({'token': access}, status=status.HTTP_200_OK)
 
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
 
 def obtener_latitud_longitud(direccion):
     geolocator = Nominatim(user_agent="mi_aplicacion")
