@@ -90,14 +90,14 @@ def login_user(request):
 
         # Generar el RefreshToken y AccessToken
         refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)  # Obtenemos el AccessToken
+        access = refresh.access_token  # No convertir a str
 
-        refresh["rol"] = str(usuario.role)
-        refresh["rut"] = str(usuario.rut)
-        refresh["email"] = str(usuario.email)
+        # Agregar datos adicionales al token de acceso
+        access["rol"] = str(usuario.role)
+        access["rut"] = str(usuario.rut)
+        access["email"] = str(usuario.email)
 
-        return Response({'token': access}, status=status.HTTP_200_OK)
-
+        return Response({'token': str(access)}, status=status.HTTP_200_OK)
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 def obtener_latitud_longitud(direccion):
