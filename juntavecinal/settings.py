@@ -12,15 +12,19 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Cargar variables de entorno desde el archivo .env
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-7n@qr2pn%@=gsq8skw^%y3u7r4@7*0uz45yx=i@8v4+*7iy#ea'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -83,17 +87,17 @@ WSGI_APPLICATION = 'juntavecinal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dbjunta1',        # El nombre de tu base de datos PostgreSQL
-        'USER': 'postgres',               # El usuario de la base de datos
-        'PASSWORD': 'postgres',           # La contraseña de tu usuario
-        'HOST': 'localhost',              # En caso de estar en el servidor local
-        'PORT': '5434',                   # El puerto de PostgreSQL (por defecto es 5432)
+        'NAME': os.getenv('DB_NAME'),        # Nombre de la base de datos
+        'USER': os.getenv('DB_USER'),        # Usuario de la base de datos
+        'PASSWORD': os.getenv('DB_PASSWORD'),# Contraseña del usuario
+        'HOST': os.getenv('DB_HOST'),        # Host de la base de datos
+        'PORT': os.getenv('DB_PORT'),        # Puerto de la base de datos
     }
 }
-
 
 
 # Password validation
@@ -145,6 +149,14 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+}
+
+# configuracion del token
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Duración del Access Token
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # Duración del Refresh Token
+    'ROTATE_REFRESH_TOKENS': True,                    # Si se deben rotar los Refresh Tokens
+    'BLACKLIST_AFTER_ROTATION': True,                  # Blacklist el token anterior después de rotarlo
 }
 
 

@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
@@ -15,6 +15,7 @@ from viviendas.models import Housing, Family, FamilyMember
 
 # Create your views here.
 @api_view(['POST'])
+@permission_classes([AllowAny]) 
 def register_user(request):
     if request.method == 'POST':
         data = request.data
@@ -91,12 +92,10 @@ def login_user(request):
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)  # Obtenemos el AccessToken
 
-        # Almacenar información en el RefreshToken (opcional)
         refresh["rol"] = str(usuario.role)
         refresh["rut"] = str(usuario.rut)
         refresh["email"] = str(usuario.email)
 
-        # Devolver solo el AccessToken en un campo llamado 'token'
         return Response({'token': access}, status=status.HTTP_200_OK)
 
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -112,11 +111,17 @@ def obtener_latitud_longitud(direccion):
     except GeocoderTimedOut:
         return obtener_latitud_longitud(direccion)
 
-@login_required
+
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def users_datatable(request):
-    users = User.objects.all()
     
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
+    users = User.objects.all()
+
     if not users:
         return JsonResponse({'message': 'No users found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -157,22 +162,38 @@ def users_datatable(request):
     return JsonResponse(usuarios_data, safe=False)
 
 
-@login_required
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def user_delete(request):
+
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     rut = request.data.get('rut')
     rut = int(rut.replace('.', '').replace('-', ''))
     user = User.objects.filter(rut=rut).last()
-    
+
+    # Verificar si el usuario autenticado es admin
+    print("rol:", request.user.role) # print temporal
+    if request.user.role != 1:  
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     if user:
         user.delete()
         return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-@login_required
+
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def user_edit_modal(request):
+
+    # Verificar si el usuario autenticado es admin o tiene rol 2
+    if request.user.role not in [1, 2]:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     rut = request.data.get('rut')
     rut = int(rut.replace('.', '').replace('-', ''))
     user = User.objects.filter(rut=rut).last()
@@ -192,9 +213,15 @@ def user_edit_modal(request):
 
     return JsonResponse({'message': 'No user found'}, status=status.HTTP_404_NOT_FOUND)
 
-@login_required
+
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def user_edit(request):
+
+   # Verificar si el usuario autenticado es admin o tiene rol 2
+    if request.user.role not in [1, 2]:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     rut = request.data.get('rut')
     rut = int(rut.replace('.', '').replace('-', ''))
     data = request.data
@@ -219,9 +246,15 @@ def user_edit(request):
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-@login_required
+
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def family_member_register(request):
+
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     data = request.data
     rut = data.get('rut')
     rut_member = data.get('rutMember')
@@ -229,8 +262,12 @@ def family_member_register(request):
     # Limpiar y convertir el RUT a entero
     rut = int(rut.replace('.', '').replace('-', ''))
     rut_member = int(rut_member.replace('.', '').replace('-', ''))
-
     user = User.objects.filter(rut=rut).last()
+
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:  
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     if user:
         family = Family.objects.filter(user=user).last()
         if family:
@@ -259,9 +296,15 @@ def family_member_register(request):
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-@login_required
+
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_user_by_rut(request):
+
+    # Verificar si el usuario autenticado es admin o tiene rol 2
+    if request.user.role not in [1, 2]:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     rut = request.query_params.get('rut')
     if not rut:
         return Response({'error': 'RUT is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -270,6 +313,7 @@ def get_user_by_rut(request):
     cleaned_rut = rut.replace('.', '').replace('-', '')
     
     user = User.objects.filter(rut=cleaned_rut).last()
+
     if not user:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 

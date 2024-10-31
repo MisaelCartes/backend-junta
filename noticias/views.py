@@ -1,6 +1,6 @@
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 # from django.contrib.auth.decorators import login_required
 from datetime import datetime
@@ -12,6 +12,11 @@ from .serializers import NoticiaSerializer
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_noticia(request):
+
+   # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     # Obtener los datos del request
     tittle = request.data.get('title')
     content = request.data.get('description')
@@ -92,6 +97,7 @@ def create_noticia(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([AllowAny]) 
 def get_all_noticias(request):
     # Obtener solo las noticias que están vigentes
     now = datetime.now()
@@ -102,6 +108,11 @@ def get_all_noticias(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def edit_noticia(request):
+
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     # Obtener el ID de la noticia desde el cuerpo de la solicitud
     noticia_id = request.data.get('id')
     
@@ -191,6 +202,10 @@ def edit_noticia(request):
 @permission_classes([IsAuthenticated])
 def get_noticia_by_id(request):
 
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
     noticia_id = request.query_params.get('id')
     # Buscar la noticia por ID
     noticia = Noticia.objects.filter(id=noticia_id).last()
@@ -205,6 +220,10 @@ def get_noticia_by_id(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_noticia(request):
+
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
     noticia_id = request.data.get('id')
     # Buscar la noticia por ID
