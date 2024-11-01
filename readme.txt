@@ -14,7 +14,7 @@ pip install Pillow
 pip install djangorestframework
 pip install djangorestframework-simplejwt
 pip install geopy # libreria captura latitud longitud
-
+pip install python-dotenv
 
 #CORS FIX
 pip install django-cors-headers

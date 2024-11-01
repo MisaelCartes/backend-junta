@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'juntas',
     'viviendas',
     'noticias',
+    'documents',
     'rest_framework',
 ]
 

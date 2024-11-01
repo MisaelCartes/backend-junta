@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('usuarios.urls')),
     path('', include('noticias.urls')),
+    path('', include('documents.urls')),
 ]
 
 if settings.DEBUG:  # Solo en modo de desarrollo
