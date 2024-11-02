@@ -97,6 +97,9 @@ def create_certificate_request(request):
     if not user and not family_member:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    if user and family_member:
+        return Response({'error': 'Certificate bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated]) 
 def get_certificate_requests_user(request):
