@@ -251,8 +251,8 @@ def user_edit(request):
 @permission_classes([IsAuthenticated])
 def family_member_register(request):
 
-    # Verificar si el usuario autenticado es admin
-    if request.user.role != 1:
+    # Verificar si el usuario autenticado es admin o user
+    if request.user.role not in [1, 2]:
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
     data = request.data
@@ -264,16 +264,13 @@ def family_member_register(request):
     rut_member = int(rut_member.replace('.', '').replace('-', ''))
     user = User.objects.filter(rut=rut).last()
 
-    # Verificar si el usuario autenticado es admin
-    if request.user.role != 1:  
-        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
-
     if user:
         family = Family.objects.filter(user=user).last()
         if family:
             # Comprobar si el miembro de la familia ya está registrado
             family_member = FamilyMember.objects.filter(rut=rut_member).last()
-            if not family_member:
+            user_member = User.objects.filter(rut=rut_member).last()
+            if not family_member or not user_member:
                 date_of_birth = datetime.strptime(data.get('date_of_birth'), '%Y-%m-%d').date()
                 
                 family_member = FamilyMember(
