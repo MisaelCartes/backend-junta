@@ -109,6 +109,7 @@ def get_certificate_requests_user(request):
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
     
     rut = request.query_params.get('rut')
+    rut = int(rut.replace('.', '').replace('-', ''))
     if not rut:
         return Response({'error': 'RUT is required'}, status=status.HTTP_400_BAD_REQUEST)
     family = Family.objects.filter(user__rut=rut).last()
