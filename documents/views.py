@@ -121,6 +121,7 @@ def get_certificate_requests_user(request):
         for certificate in certificates_family_members:
             # Crear el diccionario para cada usuario
             requests = {
+                "id":certificate.id,
                 "user":certificate.family_member.first_name,
                 "rut":certificate.family_member.rut,
                 "dateCreation":certificate.creation_date,
@@ -133,6 +134,7 @@ def get_certificate_requests_user(request):
         for certificate in certicates_user:
             # Crear el diccionario para cada usuario
             requests = {
+                "id":certificate.id,
                 "user":certificate.user.first_name,
                 "rut":certificate.user.rut,
                 "dateCreation":certificate.creation_date,
@@ -162,6 +164,7 @@ def get_certificate_requests_admin(request):
         for certificate in certificates_family_members:
             # Crear el diccionario para cada usuario
             requests = {
+                "id":certificate.id,
                 "user":certificate.family_member.first_name,
                 "rut":certificate.family_member.rut,
                 "dateCreation":certificate.creation_date,
@@ -174,6 +177,7 @@ def get_certificate_requests_admin(request):
         for certificate in certicates_user:
             # Crear el diccionario para cada usuario
             requests = {
+                "id":certificate.id,
                 "user":certificate.user.first_name,
                 "rut":certificate.user.rut,
                 "dateCreation":certificate.creation_date,
@@ -185,3 +189,41 @@ def get_certificate_requests_admin(request):
         return Response({'error': 'Certificates not found'}, status=status.HTTP_404_NOT_FOUND)
     
     return JsonResponse(requests_data, safe=False)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_status_certificate(request):
+
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+    
+    rut_user = request.data.get('rut')
+    rut_user = int(rut_user.replace('.', '').replace('-', ''))
+    status = request.data.get('status')
+    id = request.data.get('id')
+
+    # Validar si el estado es permitido
+    if status not in ["APPROVED", "REJECTED"]:
+        return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Buscar la solicitud por ID
+    try:
+        certificate = CertificateRequest.objects.get(id=id).last()
+    except CertificateRequest.DoesNotExist:
+        return Response({'error': 'Certificate request not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Actualizar el estado de la solicitud
+    if status == "APPROVED":
+        certificate.status = 'approved'
+        certificate.rejection_reason = ''  # Limpia cualquier motivo de rechazo previo
+
+    elif status == "REJECTED":
+        certificate.status = 'rejected'
+        # Agregar el motivo de rechazo si está en los datos
+        # rejection_reason = request.data.get('rejection_reason', '')
+        # certificate.rejection_reason = rejection_reason
+
+    # Guardar cambios
+    certificate.save()
+
+    return Response({'success': 'Status updated successfully'}, status=status.HTTP_200_OK)
