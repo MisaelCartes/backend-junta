@@ -142,7 +142,7 @@ def get_certificate_requests_user(request):
                 "status":certificate.get_status_display()
             }
             requests_data.append(requests)
-    if not certicates_user and certificates_family_members:
+    if not certicates_user and not certificates_family_members:
         return Response({'error': 'Certificates not found'}, status=status.HTTP_404_NOT_FOUND)
     
     return JsonResponse(requests_data, safe=False)
