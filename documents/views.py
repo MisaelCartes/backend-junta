@@ -199,25 +199,25 @@ def change_status_certificate(request):
     
     rut_user = request.data.get('rut')
     rut_user = int(rut_user.replace('.', '').replace('-', ''))
-    status = request.data.get('status')
+    status_c = request.data.get('status')
     id = request.data.get('id')
 
     # Validar si el estado es permitido
-    if status not in ["APPROVED", "REJECTED"]:
+    if status_c not in ["APPROVED", "REJECTED"]:
         return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
     
     # Buscar la solicitud por ID
     try:
-        certificate = CertificateRequest.objects.get(id=id).last()
+        certificate = CertificateRequest.objects.filter(id=id).last()
     except CertificateRequest.DoesNotExist:
         return Response({'error': 'Certificate request not found'}, status=status.HTTP_404_NOT_FOUND)
     
     # Actualizar el estado de la solicitud
-    if status == "APPROVED":
+    if status_c == "APPROVED":
         certificate.status = 'approved'
         certificate.rejection_reason = ''  # Limpia cualquier motivo de rechazo previo
 
-    elif status == "REJECTED":
+    elif status_c == "REJECTED":
         certificate.status = 'rejected'
         # Agregar el motivo de rechazo si está en los datos
         # rejection_reason = request.data.get('rejection_reason', '')
