@@ -190,7 +190,7 @@ def user_delete(request):
         family = Family.objects.filter(user=user).last()
         members = FamilyMember.objects.filter(family=family)
 
-        if not members:
+        if not members and family:
             family.delete()
         else:
             miembros_mayoria_edad = False
@@ -204,33 +204,33 @@ def user_delete(request):
                 else:
                     print("Menor de edad")
 
-            if not miembros_mayoria_edad:
+            if not miembros_mayoria_edad and family and members:
                 family.delete()
                 members.delete()
 
-        adjusted_data = {
-            'rut': member.rut,
-            'password': member.rut[:4],
-            'email': member.email,
-            'first_name': member.first_name,
-            'last_name': member.last_name,
-            'mother_last_name':None,
-            'phone_number': member.phone_number,
-            'address': family.housing.address,
-            'role': user.role,
-            'photo': None
-        }
-        serializer = UserSerializer(data=adjusted_data)
-        
-        if serializer.is_valid():
-            serializer.save()
-            user = User.objects.filter(rut=rut).last()
-            family.user = user
-            family.save()
+        if miembros_mayoria_edad:
+            adjusted_data = {
+                'rut': family_member.rut,
+                'password': family_member.rut[:4],
+                'email': family_member.email,
+                'first_name': family_member.first_name,
+                'last_name': family_member.last_name,
+                'mother_last_name':None,
+                'phone_number': family_member.phone_number,
+                'address': family.housing.address,
+                'role': user.role,
+                'photo': None
+            }
+            serializer = UserSerializer(data=adjusted_data)
+            
+            if serializer.is_valid():
+                serializer.save()
+                user = User.objects.filter(rut=rut).last()
+                family.user = user
+                family.save()
         return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
