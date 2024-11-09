@@ -68,8 +68,8 @@ def register_user(request):
                     house.latitude = latitud
                     house.longitude = longitud
                     house.save()
-
-            family_name = f"{user.last_name} {user.mother_last_name}".strip()
+            mother_last_name = user.mother_last_name if user and user.mother_last_name else None
+            family_name = f"{user.last_name} {mother_last_name}".strip()
             family, _ = Family.objects.get_or_create(housing=house, user=user, defaults={'family_name': family_name})
 
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
@@ -85,19 +85,22 @@ def login_user(request):
     user = authenticate(rut=rut, password=password)
     if user is not None:
         usuario = User.objects.filter(rut=rut).last()
-        usuario.last_login = datetime.now()
-        usuario.save()
+        if usuario and usuario.is_active:
+            usuario.last_login = datetime.now()
+            usuario.save()
 
-        # Generar el RefreshToken y AccessToken
-        refresh = RefreshToken.for_user(user)
-        access = refresh.access_token  # No convertir a str
+            # Generar el RefreshToken y AccessToken
+            refresh = RefreshToken.for_user(user)
+            access = refresh.access_token  # No convertir a str
 
-        # Agregar datos adicionales al token de acceso
-        access["rol"] = str(usuario.role)
-        access["rut"] = str(usuario.rut)
-        access["email"] = str(usuario.email)
+            # Agregar datos adicionales al token de acceso
+            access["rol"] = str(usuario.role)
+            access["rut"] = str(usuario.rut)
+            access["email"] = str(usuario.email)
 
-        return Response({'token': str(access)}, status=status.HTTP_200_OK)
+            return Response({'token': str(access)}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 def obtener_latitud_longitud(direccion):
@@ -120,7 +123,7 @@ def users_datatable(request):
     if request.user.role != 1:
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
-    users = User.objects.all()
+    users = User.objects.filter(is_active=True)
 
     if not users:
         return JsonResponse({'message': 'No users found'}, status=status.HTTP_404_NOT_FOUND)
@@ -128,7 +131,8 @@ def users_datatable(request):
     usuarios_data = []
     
     for user in users:
-        family_name = f"{user.last_name} {user.mother_last_name}".strip()
+        mother_last_name = user.mother_last_name if user and user.mother_last_name else None
+        family_name = f"{user.last_name} {mother_last_name}".strip()
         house, _ = Housing.objects.get_or_create(
             address=user.address,
             defaults={'housing_type': 'Casa', 'latitude': None, 'longitude': None}
@@ -143,13 +147,14 @@ def users_datatable(request):
                 house.save()
 
         Family.objects.get_or_create(housing=house, user=user, defaults={'family_name': family_name})
-
+        
+        
         # Crear el diccionario para cada usuario
         usuario_info = {
             "firstName": user.first_name,
             "rut": user.rut,
             "lastName": user.last_name,
-            "motherLastName": user.mother_last_name,
+            "motherLastName": mother_last_name,
             "address": user.address,
             "phoneNumber": user.phone_number,
             "email": user.email,
@@ -179,8 +184,49 @@ def user_delete(request):
     if request.user.role != 1:  
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
-    if user:
-        user.delete()
+    if user and user.is_active:
+        user.is_active = False
+        user.save()
+        family = Family.objects.filter(user=user).last()
+        members = FamilyMember.objects.filter(family=family)
+
+        if not members:
+            family.delete()
+        else:
+            miembros_mayoria_edad = False
+            for member in members:
+                edad = member.get_age()
+
+                if edad >=18:
+                    miembros_mayoria_edad=True
+                    family_member = member
+                    break
+                else:
+                    print("Menor de edad")
+
+            if not miembros_mayoria_edad:
+                family.delete()
+                members.delete()
+
+        adjusted_data = {
+            'rut': member.rut,
+            'password': member.rut[:4],
+            'email': member.email,
+            'first_name': member.first_name,
+            'last_name': member.last_name,
+            'mother_last_name':None,
+            'phone_number': member.phone_number,
+            'address': family.housing.address,
+            'role': user.role,
+            'photo': None
+        }
+        serializer = UserSerializer(data=adjusted_data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            user = User.objects.filter(rut=rut).last()
+            family.user = user
+            family.save()
         return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -198,8 +244,9 @@ def user_edit_modal(request):
     rut = int(rut.replace('.', '').replace('-', ''))
     user = User.objects.filter(rut=rut).last()
 
-    if user:
-        nombre, apellido, segundo_apellido = user.first_name, user.last_name, user.mother_last_name
+    if user and user.is_active:
+        mother_last_name = user.mother_last_name if user and user.mother_last_name else None
+        nombre, apellido, segundo_apellido = user.first_name, user.last_name, mother_last_name
         email = user.email or ''
         phone_number = user.phone_number or ''
         
@@ -227,8 +274,9 @@ def user_edit(request):
     data = request.data
     user = User.objects.filter(rut=rut).last()
 
-    if user:
-        actual_name, actual_lastname, actual_mlastname = user.first_name, user.last_name, user.mother_last_name
+    if user and user.is_active:
+        mother_last_name = user.mother_last_name if user and user.mother_last_name else None
+        actual_name, actual_lastname, actual_mlastname = user.first_name, user.last_name, mother_last_name
         name = data.get('firstName') or actual_name
         lastname = data.get('lastName') or actual_lastname
         mlastname = data.get('motherLastName') or actual_mlastname
@@ -264,7 +312,7 @@ def family_member_register(request):
     rut_member = int(rut_member.replace('.', '').replace('-', ''))
     user = User.objects.filter(rut=rut).last()
 
-    if user:
+    if user and user.is_active:
         family = Family.objects.filter(user=user).last()
         if family:
             # Comprobar si el miembro de la familia ya está registrado
@@ -309,7 +357,7 @@ def get_user_by_rut(request):
     # Limpiar el RUT eliminando puntos y guiones antes de buscar en la base de datos
     cleaned_rut = rut.replace('.', '').replace('-', '')
     
-    user = User.objects.filter(rut=cleaned_rut).last()
+    user = User.objects.filter(rut=cleaned_rut, is_active=True).last()
 
     if not user:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
