@@ -346,9 +346,7 @@ def family_member_register(request):
 @permission_classes([IsAuthenticated])
 def get_user_by_rut(request):
 
-    # Verificar si el usuario autenticado es admin o tiene rol 2
-    if request.user.role not in [1, 2]:
-        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
 
     rut = request.query_params.get('rut')
     if not rut:
@@ -378,3 +376,68 @@ def get_user_by_rut(request):
     }
 
     return Response(formatted_data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def users_list_map(request):
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Listas para almacenar la información de familias y viviendas
+    families_data = []
+    housing_data = []
+
+    # Recorremos cada vivienda en lugar de cada usuario
+    housings = Housing.objects.all()
+    for housing in housings:
+        # Obtener todas las familias asociadas a la vivienda
+        families = Family.objects.filter(housing=housing, user__is_active=True)
+
+        # Solo agregar la vivienda una vez
+        housing_data.append({
+            'address': housing.address,
+            'latitude': housing.latitude,
+            'longitude': housing.longitude,
+            'housing_type': housing.housing_type,
+        })
+
+        # Recorrer cada familia y agregarla a `families_data`
+        for family in families:
+            user = family.user  # Obtener el usuario jefe de hogar
+            family_members = FamilyMember.objects.filter(family=family)
+
+            # Crear entrada de familia
+            family_entry = {
+                'user': {
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'rut': user.rut,
+                    'relationship': 'Jefe Hogar',
+                    'email': user.email,
+                    'phone_number': user.phone_number,
+                } if user else None,
+                'family_name': family.family_name,
+                'family_address': user.address,
+                'family_members': [
+                    {
+                        'first_name': member.first_name,
+                        'last_name': member.last_name,
+                        'rut': member.rut,
+                        'relationship': member.relationship,
+                        'email': member.email,
+                        'phone_number': member.phone_number,
+                    }
+                    for member in family_members
+                ],
+            }
+
+            # Agregar la familia a la lista `families_data`
+            families_data.append(family_entry)
+    # Respuesta con la estructura solicitada
+    response_data = {
+        'family': families_data,
+        'housing': housing_data,
+    }
+    
+    return Response(response_data, status=status.HTTP_200_OK)
