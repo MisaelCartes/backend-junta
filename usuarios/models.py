@@ -34,7 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     rut = models.CharField(max_length=12, unique=True)  # RUT único
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
-    mother_last_name = models.CharField(max_length=255, blank=True)
+    mother_last_name = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=15)
     address = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -45,10 +45,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'rut'
-    REQUIRED_FIELDS = ['first_name', 'last_name', 'mother_last_name', 'email', 'phone_number', 'address']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'email', 'phone_number', 'address']
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} {self.mother_last_name}"
+        return f"{self.first_name} {self.last_name}"
 
 class Membership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -75,6 +75,8 @@ def create_certificate_request(request):
         return Response({'error': 'RUT user is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.filter(rut=rut).last()
+    if user and not user.is_active:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     family = Family.objects.filter(user__rut=rut_user).last()
     family_member = FamilyMember.objects.filter(family=family,rut=rut).last()
 
