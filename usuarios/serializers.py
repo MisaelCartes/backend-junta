@@ -15,7 +15,8 @@ class UserSerializer(serializers.ModelSerializer):
             'address', 
             'is_active', 
             'role',
-            'photo'
+            'photo',
+            'date_of_birth'
         ]
         extra_kwargs = {
             'password': {'write_only': True}
@@ -31,7 +32,8 @@ class UserSerializer(serializers.ModelSerializer):
             phone_number=validated_data.get('phone_number', ''),
             address=validated_data.get('address', ''),
             role=validated_data.get('role', None),
-            photo=validated_data.get('photo', None)
+            photo=validated_data.get('photo', None),
+            date_of_birth=validated_data.get('date_of_birth', '')
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -47,6 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.is_active = validated_data.get('is_active', instance.is_active)
         instance.role = validated_data.get('role', instance.role)
         instance.photo = validated_data.get('photo', instance.photo)
+        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
 
         password = validated_data.get('password', None)
         if password:

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from datetime import date
 
 class UserManager(BaseUserManager):
     def create_user(self, rut, first_name, last_name, mother_last_name, email, phone_number, address, password=None, **extra_fields):
@@ -41,6 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     role = models.IntegerField(null=True, blank=True)
     photo = models.FileField(null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
 
     objects = UserManager()
 
@@ -49,7 +51,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
-
+    
+    def get_age(self):
+        """Calcula la edad del miembro de la familia basada en la fecha de nacimiento."""
+        today = date.today()
+        age = today.year - self.date_of_birth.year
+        # Ajustar la edad si el cumpleaños aún no ha ocurrido este año
+        if (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day):
+            age -= 1
+        return age
 class Membership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     association = models.ForeignKey('juntas.NeighborAssociation', on_delete=models.CASCADE)
