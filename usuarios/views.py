@@ -10,8 +10,12 @@ from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 from django.contrib.auth.decorators import login_required
 from .models import User
+from datetime import date
+from documents.models import CertificateRequest
 from .serializers import UserSerializer
 from viviendas.models import Housing, Family, FamilyMember
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
 
 # Create your views here.
 @api_view(['POST'])
@@ -46,7 +50,8 @@ def register_user(request):
             'phone_number': data.get('phoneNumber'),
             'address': address,
             'role': role,
-            'photo': data.get('photo')
+            'photo': data.get('photo'),
+            'date_of_birth':data.get('dateOfBirth'),
         }
 
         serializer = UserSerializer(data=adjusted_data)
@@ -439,6 +444,102 @@ def users_list_map(request):
     # Respuesta con la estructura solicitada
     response_data = {
         'housing': housing_data,
+    }
+    
+    return Response(response_data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def users_kpis(request):
+
+    # Verificar si el usuario autenticado es admin
+    if request.user.role != 1:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+    #Iniciacion variables a utilizar
+    solicitud_menor = 0
+    solicitud_adolescente = 0
+    solicitud_adulto = 0
+    solicitud_tercera_edad = 0
+
+    # KPI: Cantidad de usuarios registrados
+    cantidad_usuarios_registrados = User.objects.filter(is_active=True).count()
+
+    # KPI: Clasificación de solicitudes por tipo de persona
+    # Obtener todas las solicitudes
+    solicitudes = CertificateRequest.objects.all()
+    for solicitud in solicitudes:
+        if solicitud.user and solicitud.user.is_active and solicitud.user.date_of_birth:
+            birth_date = solicitud.user.date_of_birth
+        elif solicitud.family_member and solicitud.family_member.date_of_birth:
+            birth_date = solicitud.family_member.date_of_birth
+        else:
+            continue
+        
+        today = date.today()
+        age = today.year - birth_date.year
+        if (today.month, today.day) < (birth_date.month, birth_date.day):
+            age -= 1
+
+        # Clasificar la solicitud según el tipo de persona
+        if age <= 13:
+            solicitud_menor += 1
+        elif 14 <= age <= 18:
+            solicitud_adolescente += 1
+        elif 19 <= age <= 64:
+            solicitud_adulto += 1
+        else:
+            solicitud_tercera_edad += 1
+    cantidad_solicitudes_tipo_persona = {
+        'menor': solicitud_menor,
+        'adolescente': solicitud_adolescente,
+        'adulto': solicitud_adulto,
+        'tercera_edad': solicitud_tercera_edad,
+    }
+
+
+    # KPI: Solicitudes mensuales
+    solicitudes_mensuales = (
+        CertificateRequest.objects
+        .annotate(month=TruncMonth('creation_date'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+    cantidad_solicitudes_mensuales = [
+        {'month': solicitud['month'].strftime('%Y-%m'), 'count': solicitud['count']}
+        for solicitud in solicitudes_mensuales
+    ]
+
+    # KPI: Demografía de usuarios y miembros de familia
+    demografia = {
+        'menor': 0,
+        'adolescente': 0,
+        'adulto': 0,
+        'tercera_edad': 0
+    }
+    # Obtener usuarios y miembros de familia existentes y calcular sus edades
+    personas = list(User.objects.filter(is_active=True)) + list(FamilyMember.objects.all())
+    for persona in personas:
+        birth_date = persona.date_of_birth
+        if birth_date:
+            age = today.year - birth_date.year
+            if (today.month, today.day) < (birth_date.month, birth_date.day):
+                age -= 1
+
+            if age <= 13:
+                demografia['menor'] += 1
+            elif 14 <= age <= 18:
+                demografia['adolescente'] += 1
+            elif 19 <= age <= 64:
+                demografia['adulto'] += 1
+            else:
+                demografia['tercera_edad'] += 1
+
+    response_data = {
+        'cantidad_solicitudes_tipo_persona': cantidad_solicitudes_tipo_persona,
+        'cantidad_solicitudes_mensuales': cantidad_solicitudes_mensuales,
+        'cantidad_usuarios_registrados': cantidad_usuarios_registrados,
+        'demografia_usuarios_y_miembros': demografia,
     }
     
     return Response(response_data, status=status.HTTP_200_OK)
