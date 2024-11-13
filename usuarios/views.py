@@ -384,8 +384,7 @@ def users_list_map(request):
     if request.user.role != 1:
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
-    # Listas para almacenar la información de familias y viviendas
-    families_data = []
+    # Lista para almacenar la información de viviendas y sus familias
     housing_data = []
 
     # Recorremos cada vivienda en lugar de cada usuario
@@ -394,15 +393,8 @@ def users_list_map(request):
         # Obtener todas las familias asociadas a la vivienda
         families = Family.objects.filter(housing=housing, user__is_active=True)
 
-        # Solo agregar la vivienda una vez
-        housing_data.append({
-            'address': housing.address,
-            'latitude': housing.latitude,
-            'longitude': housing.longitude,
-            'housing_type': housing.housing_type,
-        })
-
-        # Recorrer cada familia y agregarla a `families_data`
+        # Crear una lista de familias asociadas a esta vivienda
+        families_data = []
         for family in families:
             user = family.user  # Obtener el usuario jefe de hogar
             family_members = FamilyMember.objects.filter(family=family)
@@ -432,11 +424,20 @@ def users_list_map(request):
                 ],
             }
 
-            # Agregar la familia a la lista `families_data`
+            # Agregar la familia a la lista `families_data` para esta vivienda
             families_data.append(family_entry)
+
+        # Agregar la vivienda junto con sus familias a `housing_data`
+        housing_data.append({
+            'address': housing.address,
+            'latitude': housing.latitude,
+            'longitude': housing.longitude,
+            'housing_type': housing.housing_type,
+            'families': families_data,
+        })
+
     # Respuesta con la estructura solicitada
     response_data = {
-        'family': families_data,
         'housing': housing_data,
     }
     
