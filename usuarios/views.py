@@ -451,7 +451,7 @@ def users_list_map(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def users_kpis(request):
-
+    today = date.today()
     # Verificar si el usuario autenticado es admin
     if request.user.role != 1:
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
