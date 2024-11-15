@@ -16,7 +16,7 @@ from .serializers import UserSerializer
 from viviendas.models import Housing, Family, FamilyMember
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
-
+import re
 # Create your views here.
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
@@ -28,6 +28,10 @@ def register_user(request):
         address = data.get('address')
         housing_type = data.get('housingType')
         rut = data.get('rut')
+
+        # Validar el RUT usando la función
+        if not validar_rut(rut):
+            return Response({'error': 'El RUT no tiene un formato válido o longitud incorrecta'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Limpiar el RUT eliminando puntos y guiones y convertir a int
         rut = int(rut.replace('.', '').replace('-', ''))
@@ -543,3 +547,18 @@ def users_kpis(request):
     }
     
     return Response(response_data, status=status.HTTP_200_OK)
+
+# Función para validar el formato y longitud del RUT
+def validar_rut(rut):
+    # Limpiar el RUT eliminando puntos y guiones
+    rut = rut.replace('.', '').replace('-', '')
+
+    # Validar longitud (7 a 9 caracteres)
+    if not 7 <= len(rut) <= 9:
+        return False
+
+    # Verificar que el dígito verificador sea numérico o una "K" mayúscula
+    if not re.match(r'^\d{1,8}[0-9K]$', rut):
+        return False
+
+    return True

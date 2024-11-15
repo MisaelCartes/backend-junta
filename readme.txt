@@ -15,6 +15,7 @@ pip install djangorestframework
 pip install djangorestframework-simplejwt
 pip install geopy # libreria captura latitud longitud
 pip install python-dotenv
+pip install reportlab
 
 #CORS FIX
 pip install django-cors-headers
