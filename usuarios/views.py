@@ -17,6 +17,65 @@ from viviendas.models import Housing, Family, FamilyMember
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
 
+from authlib.integrations.django_client import OAuth
+from django.conf import settings
+from django.shortcuts import redirect
+from django.urls import reverse
+from urllib.parse import urlencode, quote_plus
+
+# Configuración para OAuth con Auth0
+oauth = OAuth()
+oauth.register(
+    "auth0",
+    client_id=settings.AUTH0_CLIENT_ID,
+    client_secret=settings.AUTH0_CLIENT_SECRET,
+    client_kwargs={"scope": "openid profile email"},
+    server_metadata_url=f"https://{settings.AUTH0_DOMAIN}/.well-known/openid-configuration",
+)
+
+# Función para redirigir al usuario a la página de login de Google/Auth0
+def google_login(request):
+    return oauth.auth0.authorize_redirect(
+        request, request.build_absolute_uri(reverse("google_callback"))
+    )
+
+# Función que maneja el callback de Google/Auth0 después de la autenticación
+def google_callback(request):
+    token = oauth.auth0.authorize_access_token(request)
+    user_info = oauth.auth0.parse_id_token(request, token)
+    request.session["user"] = user_info  # Guarda la información del usuario en la sesión
+    return redirect("index")
+
+# Función para cerrar sesión y redirigir al usuario a la página de logout de Auth0
+def google_logout(request):
+    request.session.clear()
+    return redirect(
+        f"https://{settings.AUTH0_DOMAIN}/v2/logout?"
+        + urlencode(
+            {
+                "returnTo": request.build_absolute_uri(reverse("index")),
+                "client_id": settings.AUTH0_CLIENT_ID,
+            },
+            quote_via=quote_plus,
+        ),
+    )
+
+# Función para limpiar el RUT
+def clean_rut(rut):
+    return rut.replace('.', '').replace('-', '')
+
+# Función para obtener latitud y longitud
+def obtener_latitud_longitud(direccion):
+    geolocator = Nominatim(user_agent="mi_aplicacion")
+    try:
+        ubicacion = geolocator.geocode(direccion)
+        if ubicacion:
+            return ubicacion.latitude, ubicacion.longitude
+        else:
+            return None, None
+    except GeocoderTimedOut:
+        return obtener_latitud_longitud(direccion)
+
 # Create your views here.
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
