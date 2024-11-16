@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
-# Exit on error
+# exit on error
 set -o errexit
 
-# Modify this line as needed for your package manager (pip, poetry, etc.)
+# Actualizar pip
+python -m pip install --upgrade pip
+
+# Instalar requerimientos
 pip install -r requirements.txt
 
-# Convert static asset files
+# Colectar archivos estáticos
 python manage.py collectstatic --no-input
 
-# Apply any outstanding database migrations
-python manage.py migrate
+# Ejecutar migraciones solo si la base de datos está disponible
+if [ "$DATABASE_URL" != "" ]; then
+    python manage.py migrate
+fi

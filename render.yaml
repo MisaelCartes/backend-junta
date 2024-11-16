@@ -6,31 +6,17 @@ services:
     buildCommand: "./build.sh"
     startCommand: "python -m gunicorn juntavecinal.asgi:application -k uvicorn.workers.UvicornWorker"
     envVars:
-      - key: DB_ENGINE
-        value: django.db.backends.postgresql
-      - key: DB_NAME
+      - key: DATABASE_URL
         fromDatabase:
-          name: digitalizacion_junta_vecinal
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: digitalizacion_junta_vecinal
-          property: username
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: digitalizacion_junta_vecinal
-          property: password
-      - key: DB_HOST
-        fromDatabase:
-          name: digitalizacion_junta_vecinal
-          property: host
-      - key: DB_PORT
-        value: 5432
+          name: mysitedb
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: AUTH0_CLIENT_ID
-        sync: false
-      - key: AUTH0_CLIENT_SECRET
-        sync: false
-      - key: AUTH0_DOMAIN
-        sync: false
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    databases:
+      - name: mysitedb
+        databaseName: digitalizacion_junta_vecinal
+        user: digitalizacion_junta_vecinal_user
