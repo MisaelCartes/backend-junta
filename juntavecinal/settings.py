@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['https://mysite-ix48.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['mysite-ix48.onrender.com', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -160,9 +160,14 @@ SIMPLE_JWT = {
 # ALLOWED_HOSTS = ['*']
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    'https://mysite-ix48.onrender.com',
+    'http://localhost:3000',
 ]
 CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://mysite-ix48.onrender.com',
+]
 
 # Configuraciones de seguridad para producción
 if not DEBUG:
