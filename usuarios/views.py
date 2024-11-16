@@ -29,10 +29,6 @@ def register_user(request):
         housing_type = data.get('housingType')
         rut = data.get('rut')
 
-        # Validar el RUT usando la función
-        if not validar_rut(rut):
-            return Response({'error': 'El RUT no tiene un formato válido o longitud incorrecta'}, status=status.HTTP_400_BAD_REQUEST)
-
         # Limpiar el RUT eliminando puntos y guiones y convertir a int
         rut = rut.replace('.', '').replace('-', '')
         print("Rut: ", rut)
@@ -187,7 +183,7 @@ def user_delete(request):
     rut = request.data.get('rut')
     rut = rut.replace('.', '').replace('-', '')
     user = User.objects.filter(rut=rut).last()
-
+    miembros_mayoria_edad = False
     # Verificar si el usuario autenticado es admin
     print("rol:", request.user.role) # print temporal
     if request.user.role != 1:  
@@ -202,7 +198,7 @@ def user_delete(request):
         if not members and family:
             family.delete()
         else:
-            miembros_mayoria_edad = False
+            
             for member in members:
                 edad = member.get_age()
 
