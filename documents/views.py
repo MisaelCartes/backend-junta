@@ -76,10 +76,10 @@ def create_certificate_request(request):
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
     
     rut_user = request.data.get('rutUser')
-    rut_user = int(rut_user.replace('.', '').replace('-', ''))
+    rut_user = rut_user.replace('.', '').replace('-', '')
 
     rut = request.data.get('rutRequest')
-    rut = int(rut.replace('.', '').replace('-', ''))
+    rut = rut.replace('.', '').replace('-', '')
 
     if not rut:
         return Response({'error': 'RUT request is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -123,7 +123,7 @@ def get_certificate_requests_user(request):
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
     
     rut = request.query_params.get('rut')
-    rut = int(rut.replace('.', '').replace('-', ''))
+    rut = rut.replace('.', '').replace('-', '')
     if not rut:
         return Response({'error': 'RUT is required'}, status=status.HTTP_400_BAD_REQUEST)
     family = Family.objects.filter(user__rut=rut).last()
@@ -212,7 +212,7 @@ def change_status_certificate(request):
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
     
     rut_user = request.data.get('rut')
-    rut_user = int(rut_user.replace('.', '').replace('-', ''))
+    rut_user = rut_user.replace('.', '').replace('-', '')
     status_c = request.data.get('status')
     id = request.data.get('id')
 
