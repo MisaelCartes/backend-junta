@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['juntavecinal.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['https://mysite-ix48.onrender.com', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -157,6 +157,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
+# ALLOWED_HOSTS = ['*']
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
