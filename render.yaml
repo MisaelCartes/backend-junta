@@ -1,22 +1,36 @@
-databases:
-  - name: mysitedb
-    plan: free
-    databaseName: mysite
-    user: mysite
-
 services:
   - type: web
     plan: free
-    name: mysite
+    name: juntavecinal
     runtime: python
     buildCommand: "./build.sh"
     startCommand: "python -m gunicorn juntavecinal.asgi:application -k uvicorn.workers.UvicornWorker"
     envVars:
-      - key: DATABASE_URL
+      - key: DB_ENGINE
+        value: django.db.backends.postgresql
+      - key: DB_NAME
         fromDatabase:
-          name: mysitedb
-          property: connectionString
+          name: digitalizacion_junta_vecinal
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: digitalizacion_junta_vecinal
+          property: username
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: digitalizacion_junta_vecinal
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: digitalizacion_junta_vecinal
+          property: host
+      - key: DB_PORT
+        value: 5432
       - key: SECRET_KEY
         generateValue: true
-      - key: WEB_CONCURRENCY
-        value: 4
+      - key: AUTH0_CLIENT_ID
+        sync: false
+      - key: AUTH0_CLIENT_SECRET
+        sync: false
+      - key: AUTH0_DOMAIN
+        sync: false
