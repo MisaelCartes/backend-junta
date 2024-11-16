@@ -85,6 +85,8 @@ def register_user(request):
 @permission_classes([AllowAny]) 
 def login_user(request):
     rut = request.data.get('rut')
+    # Eliminar puntos y guiones, y convertir a mayúsculas
+    rut = rut.replace('.', '').replace('-', '').upper()
     password = request.data.get('password')
 
     user = authenticate(rut=rut, password=password)
