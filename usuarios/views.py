@@ -34,7 +34,7 @@ def register_user(request):
             return Response({'error': 'El RUT no tiene un formato válido o longitud incorrecta'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Limpiar el RUT eliminando puntos y guiones y convertir a int
-        rut = int(rut.replace('.', '').replace('-', ''))
+        rut = rut.replace('.', '').replace('-', '')
         print("Rut: ", rut)
 
         # Inicializar role: por defecto 2 (MEMBER)
@@ -185,7 +185,7 @@ def user_delete(request):
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
     rut = request.data.get('rut')
-    rut = int(rut.replace('.', '').replace('-', ''))
+    rut = rut.replace('.', '').replace('-', '')
     user = User.objects.filter(rut=rut).last()
 
     # Verificar si el usuario autenticado es admin
@@ -250,7 +250,7 @@ def user_edit_modal(request):
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
     rut = request.data.get('rut')
-    rut = int(rut.replace('.', '').replace('-', ''))
+    rut = rut.replace('.', '').replace('-', '')
     user = User.objects.filter(rut=rut).last()
 
     if user and user.is_active:
@@ -317,8 +317,8 @@ def family_member_register(request):
     rut_member = data.get('rutMember')
 
     # Limpiar y convertir el RUT a entero
-    rut = int(rut.replace('.', '').replace('-', ''))
-    rut_member = int(rut_member.replace('.', '').replace('-', ''))
+    rut = rut.replace('.', '').replace('-', '')
+    rut_member = rut_member.replace('.', '').replace('-', '')
     user = User.objects.filter(rut=rut).last()
 
     if user and user.is_active:
