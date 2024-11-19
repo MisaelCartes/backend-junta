@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import datetime
 from geopy.geocoders import Nominatim
+from geopy.exc import GeopyError
 from geopy.exc import GeocoderTimedOut
 from django.contrib.auth.decorators import login_required
 from .models import CertificateRequest
@@ -23,6 +24,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph
+from datetime import timedelta
+from django.utils.timezone import now
 
 import io
 import os
@@ -231,6 +234,7 @@ def change_status_certificate(request):
         certificate.status = 'approved'
         certificate.rejection_reason = ''  # Limpia cualquier motivo de rechazo previo
         certificate.certificate_file = crear_certificado_residencia(certificate)
+        certificate.validity_date =  now() + timedelta(days=90)  # Tres meses después
 
     elif status_c == "REJECTED":
         certificate.status = 'rejected'
@@ -290,7 +294,7 @@ def crear_certificado_residencia(certificate):
     style.alignment = 4  # Justificar el texto
 
     # Crear texto de párrafos
-    texto_1 = f"Por medio del presente documento, la Junta de Vecinos Población Victoria certifica que el Sr./Sra. {nombre}, con cédula de identidad {rut}, reside en la dirección {direccion}, ubicada en la ciudad de {ciudad}, región de {region}, en la República de Chile."
+    texto_1 = f"Por medio del presente documento, la Junta de Vecinos Población Victoria certifica que el Sr./Sra. <b>{nombre}</b>, con cédula de identidad <b>{format_rut(rut)}</b>, reside en la dirección <b>{direccion}</b>, ubicada en la ciudad de <b>{ciudad}</b>, región de <b>{region}</b>, en la República de Chile."
     texto_2 = "Este certificado es emitido a solicitud de la parte interesada para los fines que estime convenientes."
     texto_3 = "La veracidad de esta información es de exclusiva responsabilidad de quien la emite, y el uso indebido de este certificado estará sujeto a las acciones legales pertinentes."
 
@@ -328,17 +332,39 @@ def crear_certificado_residencia(certificate):
 
     return archivo_pdf
 
-def obtener_ciudad_region(direccion):
-    geolocator = Nominatim(user_agent="mi_aplicacion")
-    location = geolocator.geocode(direccion)
+def obtener_ciudad_region(direccion, max_reintentos=3):
+    from time import sleep
+    geolocator = Nominatim(user_agent="mi_aplicacion", timeout=10)
     
-    if not location:
-        return None, None
+    for intento in range(max_reintentos):
+        try:
+            location = geolocator.geocode(direccion)
+            
+            if not location:
+                return "Ciudad desconocida", "Región desconocida"
 
-    ciudad = location.raw.get('address', {}).get('city', None)
-    region = location.raw.get('address', {}).get('state', None)
+            address = location.raw.get('address', {})
+            ciudad = address.get('city') or address.get('town') or address.get('village')
+            region = address.get('state')
 
-    return ciudad, region
+            return ciudad or "Ciudad desconocida", region or "Región desconocida"
+        
+        except GeopyError as e:
+            print(f"Intento {intento + 1} fallido: {e}")
+            sleep(2)  # Espera 2 segundos antes de reintentar
+
+    # Si todos los intentos fallan
+    return "Ciudad desconocida", "Región desconocida"
+    
+def format_rut(rut):
+    # Eliminar cualquier carácter no numérico o 'K'
+    rut = ''.join(filter(str.isalnum, rut))
+    # Separar número y dígito verificador
+    cuerpo = rut[:-1]
+    dv = rut[-1].upper()
+    # Agregar puntos cada tres dígitos y guión antes del DV
+    cuerpo_formateado = f"{int(cuerpo):,}".replace(",", ".")
+    return f"{cuerpo_formateado}-{dv}"
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

@@ -43,6 +43,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.IntegerField(null=True, blank=True)
     photo = models.FileField(null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
+    comuna = models.CharField(max_length=255, blank=True, null=True)
+    region = models.CharField(max_length=255, blank=True, null=True)
 
     objects = UserManager()
 

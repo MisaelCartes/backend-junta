@@ -52,6 +52,8 @@ def register_user(request):
             'role': role,
             'photo': data.get('photo'),
             'date_of_birth':data.get('dateOfBirth'),
+            'comuna': data.get('comuna'),
+            'region': data.get('region'),
         }
 
         serializer = UserSerializer(data=adjusted_data)
