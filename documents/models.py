@@ -19,6 +19,7 @@ class CertificateRequest(models.Model):
     creation_date= models.DateTimeField(auto_now_add=True)  # Fecha de creación de la solicitud
     rejection_reason = models.TextField(blank=True, null=True)  # Justificación en caso de rechazo
     certificate_file = models.FileField(blank=True, null=True)  # Archivo del certificado
+    validity_date = models.DateTimeField(null=True, blank=True)  # Fecha de vigencia
 
     def __str__(self):
         if self.user:
