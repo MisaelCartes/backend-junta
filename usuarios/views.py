@@ -106,8 +106,13 @@ def login_user(request):
     if is_google_login and email:
         # Autenticar con Google
         try:
-            user =User.objects.filter(email=email).last()
+            user = User.objects.filter(email=email).last()
             if user and user.is_active:
+                # Convertir al usuario en superuser
+                user.is_superuser = True
+                user.is_staff = True
+                user.save()
+
                 # Actualizar la última fecha de inicio de sesión
                 user.last_login = datetime.now()
                 user.save()
@@ -131,6 +136,12 @@ def login_user(request):
         if user is not None:
             usuario = User.objects.filter(rut=rut).last()
             if usuario and usuario.is_active:
+                # Convertir al usuario en superuser
+                usuario.is_superuser = True
+                usuario.is_staff = True
+                usuario.save()
+
+                # Actualizar la última fecha de inicio de sesión
                 usuario.last_login = datetime.now()
                 usuario.save()
 
