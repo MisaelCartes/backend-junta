@@ -25,7 +25,11 @@ def register_user(request):
         data = request.data
         print("Data request", data)
 
-        address = data.get('address')
+        address = data.get('address', '')
+
+        # Reemplazar "avenida" o "Avenida" por "av." al inicio de la dirección
+        if address.lower().startswith("avenida"):
+            address = address.replace("Avenida", "av.").replace("avenida", "av.", 1)
         housing_type = data.get('housingType')
         rut = data.get('rut')
 
@@ -70,7 +74,14 @@ def register_user(request):
 
             # Obtener latitud y longitud si no existe
             if house.latitude is None or house.longitude is None:
-                latitud, longitud = obtener_latitud_longitud(address)
+                comuna = data.get('comuna', '')
+                region = data.get('region', '')
+
+                # Combinar address, comuna y región
+                full_address = f"{address}, {comuna}, {region}"
+                latitud, longitud = obtener_latitud_longitud(full_address)
+                print("LATITUDEEEEE",latitud)
+                print("LONGITUFFFFFF",longitud)
                 if latitud and longitud:
                     house.latitude = latitud
                     house.longitude = longitud
@@ -84,33 +95,58 @@ def register_user(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
-@permission_classes([AllowAny]) 
+@permission_classes([AllowAny])
 def login_user(request):
-    rut = request.data.get('rut')
-    # Eliminar puntos y guiones, y convertir a mayúsculas
-    rut = rut.replace('.', '').replace('-', '').upper()
-    password = request.data.get('password')
+    # Verificar si es inicio de sesión con Google
+    is_google_login = request.data.get('isGoogleLogin', False)
+    email = request.data.get('email', '').lower()
+    rut = request.data.get('rut', '').replace('.', '').replace('-', '').upper()
+    password = request.data.get('password', '')
 
-    user = authenticate(rut=rut, password=password)
-    if user is not None:
-        usuario = User.objects.filter(rut=rut).last()
-        if usuario and usuario.is_active:
-            usuario.last_login = datetime.now()
-            usuario.save()
+    if is_google_login and email:
+        # Autenticar con Google
+        try:
+            user =User.objects.filter(email=email).last()
+            if user and user.is_active:
+                # Actualizar la última fecha de inicio de sesión
+                user.last_login = datetime.now()
+                user.save()
 
-            # Generar el RefreshToken y AccessToken
-            refresh = RefreshToken.for_user(user)
-            access = refresh.access_token  # No convertir a str
+                # Generar los tokens
+                refresh = RefreshToken.for_user(user)
+                access = refresh.access_token
+                access["rol"] = str(user.role)
+                access["rut"] = str(user.rut)
+                access["email"] = str(user.email)
 
-            # Agregar datos adicionales al token de acceso
-            access["rol"] = str(usuario.role)
-            access["rut"] = str(usuario.rut)
-            access["email"] = str(usuario.email)
+                return Response({'token': str(access)}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-            return Response({'token': str(access)}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+    elif rut and password:
+        # Autenticar con rut y password
+        user = authenticate(rut=rut, password=password)
+        if user is not None:
+            usuario = User.objects.filter(rut=rut).last()
+            if usuario and usuario.is_active:
+                usuario.last_login = datetime.now()
+                usuario.save()
+
+                # Generar los tokens
+                refresh = RefreshToken.for_user(user)
+                access = refresh.access_token
+                access["rol"] = str(usuario.role)
+                access["rut"] = str(usuario.rut)
+                access["email"] = str(usuario.email)
+
+                return Response({'token': str(access)}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    return Response({'error': 'Invalid login request'}, status=status.HTTP_400_BAD_REQUEST)
 
 def obtener_latitud_longitud(direccion):
     geolocator = Nominatim(user_agent="mi_aplicacion")
@@ -338,7 +374,9 @@ def family_member_register(request):
                     relationship=data.get('relationship'),
                     date_of_birth=date_of_birth,
                     email=data.get('email', None),
-                    phone_number=data.get('phoneNumber', None)
+                    phone_number=data.get('phoneNumber', None),
+                    comuna= user.comuna if user and user.comuna else None,
+                    region=user.region if user and user.region else None
                 )
                 family_member.save()
 

@@ -252,6 +252,8 @@ def crear_certificado_residencia(certificate):
     nombre = "-"
     rut = "-"
     direccion = "-"
+    comuna="-"
+    region="-"
     fecha_emision = datetime.now().strftime('%d-%m-%Y')
 
     # Obtener datos del certificado
@@ -259,14 +261,15 @@ def crear_certificado_residencia(certificate):
         nombre = certificate.user.first_name
         rut = certificate.user.rut
         direccion = certificate.user.address
+        comuna = certificate.user.comuna
+        region = certificate.user.region
 
     if certificate.family_member:
         nombre = certificate.family_member.first_name
         rut = certificate.family_member.rut
         direccion = certificate.family_member.family.housing.address
-
-    # Obtener ciudad y región
-    ciudad, region = obtener_ciudad_region(direccion)
+        comuna = certificate.family_member.comuna
+        region = certificate.family_member.region
 
     # Crear un buffer en memoria para el archivo PDF
     buffer = io.BytesIO()
@@ -294,7 +297,7 @@ def crear_certificado_residencia(certificate):
     style.alignment = 4  # Justificar el texto
 
     # Crear texto de párrafos
-    texto_1 = f"Por medio del presente documento, la Junta de Vecinos Población Victoria certifica que el Sr./Sra. <b>{nombre}</b>, con cédula de identidad <b>{format_rut(rut)}</b>, reside en la dirección <b>{direccion}</b>, ubicada en la ciudad de <b>{ciudad}</b>, región de <b>{region}</b>, en la República de Chile."
+    texto_1 = f"Por medio del presente documento, la Junta de Vecinos Población Victoria certifica que el Sr./Sra. <b>{nombre}</b>, con cédula de identidad <b>{format_rut(rut)}</b>, reside en la dirección <b>{direccion}</b>, ubicada en la comuna de <b>{comuna}</b>, región de <b>{region}</b>, en la República de Chile."
     texto_2 = "Este certificado es emitido a solicitud de la parte interesada para los fines que estime convenientes."
     texto_3 = "La veracidad de esta información es de exclusiva responsabilidad de quien la emite, y el uso indebido de este certificado estará sujeto a las acciones legales pertinentes."
 
@@ -331,30 +334,6 @@ def crear_certificado_residencia(certificate):
     archivo_pdf = File(buffer, name="certificado_residencia.pdf")
 
     return archivo_pdf
-
-def obtener_ciudad_region(direccion, max_reintentos=3):
-    from time import sleep
-    geolocator = Nominatim(user_agent="mi_aplicacion", timeout=10)
-    
-    for intento in range(max_reintentos):
-        try:
-            location = geolocator.geocode(direccion)
-            
-            if not location:
-                return "Ciudad desconocida", "Región desconocida"
-
-            address = location.raw.get('address', {})
-            ciudad = address.get('city') or address.get('town') or address.get('village')
-            region = address.get('state')
-
-            return ciudad or "Ciudad desconocida", region or "Región desconocida"
-        
-        except GeopyError as e:
-            print(f"Intento {intento + 1} fallido: {e}")
-            sleep(2)  # Espera 2 segundos antes de reintentar
-
-    # Si todos los intentos fallan
-    return "Ciudad desconocida", "Región desconocida"
     
 def format_rut(rut):
     # Eliminar cualquier carácter no numérico o 'K'
