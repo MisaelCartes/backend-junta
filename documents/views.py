@@ -94,12 +94,24 @@ def create_certificate_request(request):
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     family = Family.objects.filter(user__rut=rut_user).last()
     family_member = FamilyMember.objects.filter(family=family,rut=rut).last()
+    #RAZON Y TIPO DE CERTIFICADO
+
+    reason = int(request.data.get('reasonRequest'))
+    print(reason)
+    if reason not in CertificateRequest.REASONS:
+        return Response({'error': 'Reason not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    type_certificate = int(request.data.get('typeCertificate'))
+    if type_certificate not in CertificateRequest.TYPES:
+        return Response({'error': 'Type certificate not found'}, status=status.HTTP_404_NOT_FOUND)
 
     #VALIDACION SI ES UN CERTIFICADO PARA EL JEFE DE HOGAR
     if not family_member:
         # Crear la solicitud de certificado
         certificate_request = CertificateRequest.objects.create(
             user=user,
+            reason_of_request=reason,
+            type_of_certificate=type_certificate,
         )
         return Response({'message': 'Certificate request created', 'id': certificate_request.id}, status=status.HTTP_201_CREATED)
    
@@ -108,6 +120,8 @@ def create_certificate_request(request):
         # Crear la solicitud de certificado
         certificate_request = CertificateRequest.objects.create(
             family_member=family_member,
+            reason_of_request=reason,
+            type_of_certificate=type_certificate,
         )
         return Response({'message': 'Certificate request created', 'id': certificate_request.id}, status=status.HTTP_201_CREATED)
     #si el rut no corresponde al de un familiar
@@ -141,6 +155,7 @@ def get_certificate_requests_user(request):
                 "id":certificate.id,
                 "user":certificate.family_member.first_name,
                 "rut":certificate.family_member.rut,
+                "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":certificate.family_member.relationship,
                 "status":certificate.get_status_display()
@@ -154,6 +169,7 @@ def get_certificate_requests_user(request):
                 "id":certificate.id,
                 "user":certificate.user.first_name,
                 "rut":certificate.user.rut,
+                "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":'Jefe Hogar',
                 "status":certificate.get_status_display()
@@ -184,6 +200,7 @@ def get_certificate_requests_admin(request):
                 "id":certificate.id,
                 "user":certificate.family_member.first_name,
                 "rut":certificate.family_member.rut,
+                "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":certificate.family_member.relationship,
                 "status":certificate.get_status_display()
@@ -197,6 +214,7 @@ def get_certificate_requests_admin(request):
                 "id":certificate.id,
                 "user":certificate.user.first_name,
                 "rut":certificate.user.rut,
+                "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":'Jefe Hogar',
                 "status":certificate.get_status_display()
@@ -270,7 +288,7 @@ def crear_certificado_residencia(certificate):
         direccion = certificate.family_member.family.housing.address
         comuna = certificate.family_member.comuna
         region = certificate.family_member.region
-
+    reason = certificate.get_reason_of_request_display()
     # Crear un buffer en memoria para el archivo PDF
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
@@ -298,7 +316,7 @@ def crear_certificado_residencia(certificate):
 
     # Crear texto de párrafos
     texto_1 = f"Por medio del presente documento, la Junta de Vecinos Población Victoria certifica que el Sr./Sra. <b>{nombre}</b>, con cédula de identidad <b>{format_rut(rut)}</b>, reside en la dirección <b>{direccion}</b>, ubicada en la comuna de <b>{comuna}</b>, región de <b>{region}</b>, en la República de Chile."
-    texto_2 = "Este certificado es emitido a solicitud de la parte interesada para los fines que estime convenientes."
+    texto_2 = f"Este certificado es emitido a solicitud de la parte interesada para fines <b>{reason}</b>."
     texto_3 = "La veracidad de esta información es de exclusiva responsabilidad de quien la emite, y el uso indebido de este certificado estará sujeto a las acciones legales pertinentes."
 
     # Añadir párrafos
