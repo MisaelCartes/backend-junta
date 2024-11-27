@@ -158,7 +158,8 @@ def get_certificate_requests_user(request):
                 "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":certificate.family_member.relationship,
-                "status":certificate.get_status_display()
+                "status":certificate.get_status_display(),
+                "rejection_reason":certificate.rejection_reason if certificate.get_status_display() == "Rechazado" else "-"
             }
             requests_data.append(requests)
 
@@ -172,7 +173,8 @@ def get_certificate_requests_user(request):
                 "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":'Jefe Hogar',
-                "status":certificate.get_status_display()
+                "status":certificate.get_status_display(),
+                "rejection_reason":certificate.rejection_reason if certificate.get_status_display() == "Rechazado" else "-"
             }
             requests_data.append(requests)
     if not certicates_user and not certificates_family_members:
@@ -203,7 +205,8 @@ def get_certificate_requests_admin(request):
                 "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":certificate.family_member.relationship,
-                "status":certificate.get_status_display()
+                "status":certificate.get_status_display(),
+                "rejection_reason":certificate.rejection_reason if certificate.get_status_display() == "Rechazado" else "-"
             }
             requests_data.append(requests)
 
@@ -217,7 +220,8 @@ def get_certificate_requests_admin(request):
                 "typeCertificate":certificate.get_type_of_certificate_display(),
                 "dateCreation":certificate.creation_date,
                 "relationship":'Jefe Hogar',
-                "status":certificate.get_status_display()
+                "status":certificate.get_status_display(),
+                "rejection_reason":certificate.rejection_reason if certificate.get_status_display() == "Rechazado" else "-"
             }
             requests_data.append(requests)
     if not certicates_user and not certificates_family_members:
@@ -257,8 +261,8 @@ def change_status_certificate(request):
     elif status_c == "REJECTED":
         certificate.status = 'rejected'
         # Agregar el motivo de rechazo si está en los datos
-        # rejection_reason = request.data.get('rejection_reason', '')
-        # certificate.rejection_reason = rejection_reason
+        rejection_reason = request.data.get('rejection_reason', '')
+        certificate.rejection_reason = rejection_reason
 
     # Guardar cambios
     certificate.save()
