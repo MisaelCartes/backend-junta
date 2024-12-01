@@ -277,6 +277,33 @@ def user_delete(request):
 
     return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def family_member_delete(request):
+
+    # Verificar si el usuario autenticado es admin o tiene rol 2
+    if request.user.role not in [1, 2]:
+        return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
+    rut = request.data.get('rut')
+    rut_member = request.data.get('rutMember')
+    rut = rut.replace('.', '').replace('-', '')
+    rut_member = rut_member.replace('.', '').replace('-', '')
+
+    user = User.objects.filter(rut=rut).last()
+    if user:
+        if user.is_active:
+            family = Family.objects.filter(user=user).last()
+            if family:
+                family_member = FamilyMember.objects.filter(family=family,rut=rut_member).last()
+                if family_member:
+                    family_member.delete()
+                    return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
+                return Response({'error': 'Family member not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Family not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'User not active'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def user_edit_modal(request):
