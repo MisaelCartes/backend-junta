@@ -83,17 +83,25 @@ def create_certificate_request(request):
 
     rut = request.data.get('rutRequest')
     rut = rut.replace('.', '').replace('-', '')
-
+    print(rut_user)
+    print(rut)
     if not rut:
         return Response({'error': 'RUT request is required'}, status=status.HTTP_400_BAD_REQUEST)
     if not rut_user:
         return Response({'error': 'RUT user is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.filter(rut=rut_user).last()
+    print(user)
     if user and not user.is_active:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     family = Family.objects.filter(user=user).last()
     family_member = FamilyMember.objects.filter(family=family,rut=rut).last()
+    user_validate = User.objects.filter(rut=rut).last()
+    if user_validate:
+        if family.user.rut != user_validate.rut:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    print(family_member)
+    print(user_validate)
     #RAZON Y TIPO DE CERTIFICADO
 
     reason = int(request.data.get('reasonRequest'))
@@ -106,17 +114,17 @@ def create_certificate_request(request):
         return Response({'error': 'Type certificate not found'}, status=status.HTTP_404_NOT_FOUND)
 
     #VALIDACION SI ES UN CERTIFICADO PARA EL JEFE DE HOGAR
-    if not family_member:
+    if user_validate:
         # Crear la solicitud de certificado
         certificate_request = CertificateRequest.objects.create(
-            user=user,
+            user=user_validate,
             reason_of_request=reason,
             type_of_certificate=type_certificate,
         )
         return Response({'message': 'Certificate request created', 'id': certificate_request.id}, status=status.HTTP_201_CREATED)
    
     #VALIDACION SI ES UN CERTIFICADO PARA UN MIEMBRO DE FAMILIA
-    if not user:
+    if family_member:
         # Crear la solicitud de certificado
         certificate_request = CertificateRequest.objects.create(
             family_member=family_member,
@@ -125,10 +133,10 @@ def create_certificate_request(request):
         )
         return Response({'message': 'Certificate request created', 'id': certificate_request.id}, status=status.HTTP_201_CREATED)
     #si el rut no corresponde al de un familiar
-    if not user and not family_member:
+    if not user_validate and not family_member:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if user and family_member:
+    if user_validate and family_member:
         return Response({'error': 'Certificate bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
