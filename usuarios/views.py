@@ -370,7 +370,6 @@ def user_edit(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def family_member_register(request):
-
     # Verificar si el usuario autenticado es admin o user
     if request.user.role not in [1, 2]:
         return Response({'error': 'Unauthorized access'}, status=status.HTTP_403_FORBIDDEN)
@@ -387,29 +386,35 @@ def family_member_register(request):
     if user and user.is_active:
         family = Family.objects.filter(user=user).last()
         if family:
-            # Comprobar si el miembro de la familia ya está registrado
+            # Comprobar si el miembro de la familia con ese rut ya existe
             family_member = FamilyMember.objects.filter(rut=rut_member).last()
+            if family_member:
+                return Response({'error': 'Family member with this rut already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Comprobar si el usuario con ese rut ya existe
             user_member = User.objects.filter(rut=rut_member).last()
-            if not family_member or not user_member:
-                date_of_birth = datetime.strptime(data.get('date_of_birth'), '%Y-%m-%d').date()
+            if user_member:
+                return Response({'error': 'User with this rut already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Si pasa ambas verificaciones, proceder a crear el miembro de la familia
+            date_of_birth = datetime.strptime(data.get('date_of_birth'), '%Y-%m-%d').date()
                 
-                family_member = FamilyMember(
-                    family=family,
-                    first_name=data.get('firstName'),
-                    last_name=data.get('lastName'),
-                    rut=rut_member,
-                    relationship=data.get('relationship'),
-                    date_of_birth=date_of_birth,
-                    email=data.get('email', None),
-                    phone_number=data.get('phoneNumber', None),
-                    comuna= user.comuna if user and user.comuna else None,
-                    region=user.region if user and user.region else None
-                )
-                family_member.save()
+            # Crear y guardar el nuevo miembro de la familia
+            family_member = FamilyMember(
+                family=family,
+                first_name=data.get('firstName'),
+                last_name=data.get('lastName'),
+                rut=rut_member,
+                relationship=data.get('relationship'),
+                date_of_birth=date_of_birth,
+                email=data.get('email', None),
+                phone_number=data.get('phoneNumber', None),
+                comuna=user.comuna if user and user.comuna else None,
+                region=user.region if user and user.region else None
+            )
+            family_member.save()
 
-                return Response({'message': 'Family member registered successfully'}, status=status.HTTP_200_OK)
-
-            return Response({'error': 'Family member already registered'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'Family member registered successfully'}, status=status.HTTP_200_OK)
 
         return Response({'error': 'Family not found'}, status=status.HTTP_404_NOT_FOUND)
 
