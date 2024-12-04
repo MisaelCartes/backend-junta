@@ -43,7 +43,15 @@ def register_user(request):
         # Verificar si se especifica el rol como ADMIN (ignorar mayúsculas/minúsculas)
         if data.get('role', '').lower() == "admin":
             role = 1  # Cambiar a ADMIN si se especifica
-
+        comuna = data.get('comuna', '')
+        region = data.get('region', '')
+        if comuna != "Providencia":
+            return Response({'error': 'Invalid comuna request'}, status=status.HTTP_400_BAD_REQUEST)
+        # Combinar address, comuna y región
+        full_address = f"{address}, {comuna}, {region}"
+        latitud, longitud = obtener_latitud_longitud(full_address)
+        if not latitud and not longitud:
+            return Response({'error': 'Invalid address request'}, status=status.HTTP_400_BAD_REQUEST)
         adjusted_data = {
             'rut': rut,
             'password': data.get('password'),
