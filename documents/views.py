@@ -354,7 +354,7 @@ def crear_certificado_residencia(certificate):
     c.setFillColor(colors.black)
     c.drawCentredString(300, signature_y_position, "Autoridad Competente")
     c.setFont("Helvetica", 10)
-    c.drawCentredString(300, signature_y_position - 20, "Misael Stalin Cartes Perez, Presidente junta de vecinos.")
+    c.drawCentredString(300, signature_y_position - 20, "Esteban Paredes Quintanilla, Presidente junta de vecinos.")
 
     # Guardar el contenido en el buffer en memoria
     c.save()
