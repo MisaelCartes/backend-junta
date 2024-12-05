@@ -101,7 +101,7 @@ def create_noticia(request):
 def get_all_noticias(request):
     # Obtener solo las noticias que están vigentes
     now = datetime.now()
-    noticias_vigentes = Noticia.objects.filter(date_vigencia__gte=now)  # Filtrar por fecha de vigencia
+    noticias_vigentes = Noticia.objects.filter(date_vigencia__gte=now, date_upload__lte=now)  # Filtrar por fecha de vigencia
     serializer = NoticiaSerializer(noticias_vigentes, many=True)  # Serializar el queryset
     return Response(serializer.data, status=status.HTTP_200_OK)
 
